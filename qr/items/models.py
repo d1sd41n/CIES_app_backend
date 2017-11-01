@@ -21,7 +21,6 @@ class Item(models.Model):
     type_item = models.ForeignKey(TypeItem)
     owner = models.ForeignKey(User)
     brand = models.ForeignKey(Brand, null=True, blank=True)
-    qr_code = models.CharField(max_length=30)
     reference = models.CharField(max_length=30, blank=True)
     color = models.CharField(max_length=30, blank=True)
     description = models.CharField(max_length=255, blank=True)

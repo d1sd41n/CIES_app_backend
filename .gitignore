@@ -86,3 +86,4 @@ target/
 # SQLITE
 *.sqlite3
 migrations/
+qr/img.png

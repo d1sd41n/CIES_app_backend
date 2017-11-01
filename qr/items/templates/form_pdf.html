@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <form class="" action="/pdf/" method="post">
+    {% csrf_token %}
+    <label for="pages">Numero de paginas: </label>
+    <input id="pages" type="text" name="pages" value="{{ current_name }}">
+    <input type="submit" value="OK">
+  </form>
+{% endblock %}
