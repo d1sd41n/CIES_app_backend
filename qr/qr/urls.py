@@ -15,11 +15,11 @@ Including another URLconf
 """
 from django.conf.urls import url
 from django.contrib import admin
-from items.views import index
+from items.views import generate_qr, index
 
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
+    url(r'^pdf/', generate_qr),
     url(r'^', index),
-
 ]
