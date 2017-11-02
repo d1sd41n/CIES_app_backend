@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 from ubication.models import Location
+from items.models import Item
+from django.utils import timezone
 
 
 GENDER_CHOICE = (
@@ -52,3 +54,9 @@ class Seat(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Checkin(models.Model):
+    item = models.ForeignKey(Item)
+    seat = models.ForeignKey(Seat)
+    date = models.DateTimeField(default=timezone.now, blank=False)
