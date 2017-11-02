@@ -15,7 +15,7 @@ Including another URLconf
 """
 from django.conf.urls import url
 from django.contrib import admin
-from items.views import generate_qr, index
+from codes.views import generate_qr, index
 
 
 urlpatterns = [
