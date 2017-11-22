@@ -40,7 +40,10 @@ INSTALLED_APPS = [
     'items',
     'codes',
     'ubication',
-    'core'
+    'core',
+    'disabled',
+    # third party
+    'rest_framework',
 ]
 
 MIDDLEWARE = [
