@@ -9,6 +9,7 @@ class Code(models.Model):
                             editable=False)
     item = models.ForeignKey(Item, blank=True, null=True)
     used = models.BooleanField(default=False)
+    registration_date = models.DateField(null=True)
 
     def __str__(self):
         return str(self.code)
