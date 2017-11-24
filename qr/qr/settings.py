@@ -115,7 +115,10 @@ AUTH_PASSWORD_VALIDATORS = [
 # CORS_ORIGIN_WHITELIST = (
 #     'localhost:4200'
 # )
+
 CORS_ORIGIN_ALLOW_ALL = True
+
+# esto es una prueba
 
 LANGUAGE_CODE = 'en-us'
 
