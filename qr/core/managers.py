@@ -77,4 +77,4 @@ class UserManager(models.Manager):
                                  dni=data['dni'],
                                  )
         customUser.save()
-        return customUser
+        return user

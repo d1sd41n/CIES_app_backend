@@ -26,5 +26,6 @@ class TestSeat(APITestCase):
 class TestUser(APITestCase):
     """Esta clase testea la creacion de un usuario"""
     def test_create_user(self):
-        if core.managers.UserManager().mockup():
-            print("User model test was correct")
+        user = core.managers.UserManager().mockup()
+        print("User model test was correct")
+        return user

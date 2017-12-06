@@ -1,3 +1,11 @@
-from django.test import TestCase
+from rest_framework.test import APITestCase
+from django.test import tag
+import disabled
 
-# Create your tests here.
+
+@tag('TestCreateDisabled')
+class TestCreateDisabled(APITestCase):
+    def test_create_disabled(self):
+        disableds = disabled.models.Disabled.objects.mockup()
+        print("Disabled model test was correct")
+        return disableds
