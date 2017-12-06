@@ -1,9 +1,13 @@
 from django.db import models
 from django.contrib.auth.models import User
+from core.models import Seat
+from django.utils import timezone
 
 
 class TypeItem(models.Model):
     kind = models.CharField(max_length=30)
+    seat = models.ForeignKey(Seat, on_delete=models.CASCADE)
+    enabled = models.BooleanField(default=True)
 
     def __str__(self):
         return self.kind
@@ -12,6 +16,7 @@ class TypeItem(models.Model):
 class Brand(models.Model):
     brand = models.CharField(max_length=30)
     type_item = models.ForeignKey(TypeItem, null=True, blank=True)
+    enabled = models.BooleanField(default=True)
 
     def __str__(self):
         return self.brand
@@ -25,6 +30,7 @@ class Item(models.Model):
     color = models.CharField(max_length=30, blank=True)
     description = models.CharField(max_length=255, blank=True)
     lost = models.BooleanField(default=False)
+    enabled = models.BooleanField(default=True)
 
     def __str__(self):
         return '{0} : {1} : {2}'.format(self.owner,
@@ -39,3 +45,10 @@ class LostItem(models.Model):
 
     def __str__(self):
         return self.item
+
+
+class Checkin(models.Model):
+    item = models.ForeignKey(Item)
+    seat = models.ForeignKey(Seat)
+    date = models.DateTimeField(default=timezone.now, blank=False)
+    go_in = models.BooleanField()

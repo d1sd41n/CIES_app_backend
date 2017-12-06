@@ -1,4 +1,6 @@
 from django.db import models
+from .managers import (CountryManager, RegionManager,
+                       CityManager, LocationManager)
 
 
 class Country(models.Model):
@@ -6,6 +8,7 @@ class Country(models.Model):
     name = models.CharField(max_length=50)
     postalcode = models.CharField(max_length=3, null=True, blank=True)
     vat = models.FloatField(null=True, blank=True)
+    objects = CountryManager()
 
     class Meta:
         verbose_name_plural = "Countries"
@@ -19,6 +22,7 @@ class Region(models.Model):
     """
     name = models.CharField(max_length=50)
     country = models.ForeignKey(Country, on_delete=models.CASCADE)
+    objects = RegionManager()
 
     def __str__(self):
         return self.name
@@ -29,6 +33,7 @@ class City(models.Model):
     """
     name = models.CharField(max_length=50)
     region = models.ForeignKey(Region, on_delete=models.CASCADE)
+    objects = CityManager()
 
     class Meta:
         verbose_name_plural = "Cities"
@@ -44,6 +49,7 @@ class Location(models.Model):
     latitude = models.FloatField(null=True)
     longitude = models.FloatField(null=True)
     city = models.ForeignKey(City, on_delete=models.CASCADE)
+    objects = LocationManager()
 
     def __str__(self):
         return self.address+" "+str(self.city).capitalize()

@@ -1,8 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 from ubication.models import Location
-from items.models import Item
-from django.utils import timezone
+# from items.models import Item
+# from django.utils import timezone
 
 
 GENDER_CHOICE = (
@@ -19,6 +19,7 @@ class CustomUser(models.Model):
     gender = models.CharField(max_length=2, choices=GENDER_CHOICE)
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     dni = models.CharField(max_length=30)
+    enabled = models.BooleanField(default=True)
 
     def __str__(self):
         return '{0}: {1} {2}'.format(self.user.first_name,
@@ -54,9 +55,3 @@ class Seat(models.Model):
 
     def __str__(self):
         return self.name
-
-
-class Checkin(models.Model):
-    item = models.ForeignKey(Item)
-    seat = models.ForeignKey(Seat)
-    date = models.DateTimeField(default=timezone.now, blank=False)
