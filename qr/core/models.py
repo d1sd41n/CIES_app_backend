@@ -1,8 +1,11 @@
 from django.db import models
 from django.contrib.auth.models import User
 from ubication.models import Location
-# from items.models import Item
-# from django.utils import timezone
+from core.managers import (
+                            UserManager,
+                            CompanyManager,
+                            SeatManager,
+                            )
 
 
 GENDER_CHOICE = (
@@ -20,6 +23,7 @@ class CustomUser(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     dni = models.CharField(max_length=30)
     enabled = models.BooleanField(default=True)
+    objects = UserManager()
 
     def __str__(self):
         return '{0}: {1} {2}'.format(self.user.first_name,
@@ -35,6 +39,7 @@ class Company(models.Model):
     name = models.CharField(max_length=100)
     website = models.URLField(blank=True, null=True)
     enabled = models.BooleanField(default=True)
+    objects = CompanyManager()
 
     class Meta:
         verbose_name_plural = "Companies"
@@ -52,6 +57,7 @@ class Seat(models.Model):
     email = models.EmailField(blank=True, null=True)
     name = models.CharField(max_length=100)
     enabled = models.BooleanField(default=True)
+    objects = SeatManager()
 
     def __str__(self):
         return self.name

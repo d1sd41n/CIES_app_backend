@@ -1,6 +1,7 @@
 import uuid
 from django.db import models
 from items.models import Item
+from codes.managers import CodeManager
 
 
 class Code(models.Model):
@@ -10,6 +11,7 @@ class Code(models.Model):
     item = models.ForeignKey(Item, blank=True, null=True)
     used = models.BooleanField(default=False)
     registration_date = models.DateField(null=True)
+    objects = CodeManager()
 
     def __str__(self):
         return str(self.code)
