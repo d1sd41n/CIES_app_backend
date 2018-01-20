@@ -7,3 +7,6 @@ olefile==0.44
 Pillow==4.3.0
 pytz==2017.3
 six==1.11.0
+psycopg2==2.7.3.2
+django_cors_headers==2.1.0
+gunicorn
