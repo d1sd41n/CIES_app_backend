@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
-from core.models import Seat
+from core.models import Seat, Company, Visitor
 from django.utils import timezone
 from .managers import (TypeItemManager,
                        BrandManager,
@@ -9,10 +9,9 @@ from .managers import (TypeItemManager,
                        LostItemManager
                        )
 
-
 class TypeItem(models.Model):
     kind = models.CharField(max_length=30)
-    seat = models.ForeignKey(Seat, on_delete=models.CASCADE)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True)
     enabled = models.BooleanField(default=True)
     objects = TypeItemManager()
 
@@ -32,13 +31,14 @@ class Brand(models.Model):
 
 class Item(models.Model):
     type_item = models.ForeignKey(TypeItem)
-    owner = models.ForeignKey(User)
+    owner = models.ForeignKey(Visitor)
     brand = models.ForeignKey(Brand, null=True, blank=True)
     reference = models.CharField(max_length=30, blank=True)
     color = models.CharField(max_length=30, blank=True)
     description = models.CharField(max_length=255, blank=True)
     lost = models.BooleanField(default=False)
     enabled = models.BooleanField(default=True)
+    seatRegistration = models.ForeignKey(Seat, null=True)
     objects = ItemManager()
 
     def __str__(self):
@@ -51,6 +51,7 @@ class LostItem(models.Model):
     item = models.OneToOneField(Item)
     description = models.CharField(max_length=255)
     date = models.DateTimeField()
+    seat = models.ForeignKey(Seat, null=True)
     objects = LostItemManager()
 
     def __str__(self):
@@ -60,6 +61,7 @@ class LostItem(models.Model):
 class Checkin(models.Model):
     item = models.ForeignKey(Item)
     seat = models.ForeignKey(Seat)
+    worker = models.ForeignKey(User, null=True)
     date = models.DateTimeField(default=timezone.now, blank=False)
     go_in = models.BooleanField()
     objects = CheckinManager()

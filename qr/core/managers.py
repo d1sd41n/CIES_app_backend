@@ -78,3 +78,31 @@ class UserManager(models.Manager):
                                  )
         customUser.save()
         return user
+
+
+class CustomUserManager(models.Manager):
+    def mockup(self, api=False):
+        selection = {1: 'F', 2: 'M'}
+        preferencial = {1: True, 2: False}
+        data = {'id': None, 'gender': selection[randint(1, 2)],
+                'nit': randint(111111, 999999),
+                'dni': randint(11111, 99999)}
+        if api:
+            return data
+        data['address'] = Location.objects.mockup()
+        data['user'] = UserManager().mockup()
+        data['id'] = data['user'].id
+        return self.create_custom_user(data)
+
+    def create_custom_user(self, data):
+        print("create custom user")
+        print(data)
+        print("000000000000000000000000000000000000000")
+        custom_user = self.create(address=data['address'],
+                                  gender=data['gender'],
+                                  user=data['user'],
+                                  dni=data['dni'])
+        # enterprise.models.CustomUserHasPhone.objects.create(user=custom_user,
+        #                                                     phone=enterprise.models.Phone.objects.mockup())
+        custom_user.save()
+        return custom_user

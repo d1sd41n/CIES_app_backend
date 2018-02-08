@@ -10,6 +10,7 @@ from reportlab.pdfgen import canvas
 from django.http import HttpResponse
 from django.shortcuts import render
 from reportlab.lib.pagesizes import A4
+from rest_framework import viewsets
 
 
 def index(request):
@@ -62,4 +63,20 @@ class GetCode(APIView):
                code=code,
                )
         serializer = CodesSerializer(code)
+        return Response(serializer.data)
+
+
+# class CodesViewSet(viewsets.ReadOnlyModelViewSet):
+#     """
+#     This viewset automatically provides `list` and `detail` actions.
+#     """
+#     print("dfdfgfggfggfdgfergefe")
+
+
+class CodesView(APIView):
+
+    def get(self, request, format=None):
+        print("CodeView")
+        code = Code.objects.all()
+        serializer = CodesSerializer(code, many=True)
         return Response(serializer.data)
