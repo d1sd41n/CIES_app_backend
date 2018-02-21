@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from core.models import Seat, Company, Visitor
+from codes.models import Code
 from django.utils import timezone
 from .managers import (TypeItemManager,
                        BrandManager,
@@ -31,6 +32,7 @@ class Brand(models.Model):
 
 class Item(models.Model):
     type_item = models.ForeignKey(TypeItem)
+    code =  models.OneToOneField(Code, on_delete=models.CASCADE, null=True)
     owner = models.ForeignKey(Visitor)
     brand = models.ForeignKey(Brand, null=True, blank=True)
     reference = models.CharField(max_length=30, blank=True)
@@ -39,6 +41,8 @@ class Item(models.Model):
     lost = models.BooleanField(default=False)
     enabled = models.BooleanField(default=True)
     seatRegistration = models.ForeignKey(Seat, null=True)
+    registration_date = models.DateField(default=timezone.now, null=True)
+    registeredBy = models.ForeignKey(User, null=True)
     objects = ItemManager()
 
     def __str__(self):

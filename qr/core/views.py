@@ -388,15 +388,11 @@ class CompanyVisitor(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def create(self, request, company_pk):
-        print("----------------------------------------")
         print(request.data)
         data = request.data.copy()
         data["company"] = company_pk
         serializer = VisitorSerializer(data=data)
         if serializer.is_valid():
-            print(11111111111111)
-            print("sfwefwefwefefeffewfeefewe")
-            print(22222222222222222222222)
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
