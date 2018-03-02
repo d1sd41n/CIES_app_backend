@@ -11,11 +11,60 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 import os
-
+import raven
+# from raven.contrib.django.raven_compat.models import client
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-
+#Raven configuration for Sentry logs
+RAVEN_CONFIG = {
+    'dsn': 'https://e4b4318b6d44401d9aa0f7613cf4139c:f2bd554a05fd45c982c44ce264819ab2@sentry.io/297344',
+    'release': raven.fetch_git_sha(os.path.abspath(os.pardir)),
+}
+# client.captureException()
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': True,
+    'root': {
+        'level': 'WARNING',
+        'handlers': ['sentry'],
+    },
+    'formatters': {
+        'verbose': {
+            'format': '%(levelname)s %(asctime)s %(module)s '
+                      '%(process)d %(thread)d %(message)s'
+        },
+    },
+    'handlers': {
+        'sentry': {
+            'level': 'ERROR', # To capture more than ERROR, change to WARNING, INFO, etc.
+            'class': 'raven.contrib.django.raven_compat.handlers.SentryHandler',
+            'tags': {'custom-tag': 'x'},
+        },
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose'
+        }
+    },
+    'loggers': {
+        'django.db.backends': {
+            'level': 'ERROR',
+            'handlers': ['console'],
+            'propagate': False,
+        },
+        'raven': {
+            'level': 'DEBUG',
+            'handlers': ['console'],
+            'propagate': False,
+        },
+        'sentry.errors': {
+            'level': 'DEBUG',
+            'handlers': ['console'],
+            'propagate': False,
+        },
+    },
+}
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
 
@@ -25,8 +74,8 @@ SECRET_KEY = 'l46a%a8c@jn^vk$bj)0@eh1au8&-ypngcv^3jf9w40!d$(7uq^'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["localhost", 'web']
-
+ALLOWED_HOSTS = ["127.0.0.1", "localhost", 'web']
+INTERNAL_IPS = ["127.0.0.1", "localhost", 'web']
 
 # Application definition
 
@@ -37,6 +86,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'raven.contrib.django.raven_compat',
+    'rest_framework_swagger',
+    'debug_toolbar',
     'items',
     'codes',
     'ubication',
@@ -48,14 +100,17 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'raven.contrib.django.raven_compat.middleware.Sentry404CatchMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'raven.contrib.django.raven_compat.middleware.SentryResponseErrorIdMiddleware',
 ]
 
 ROOT_URLCONF = 'qr.urls'
@@ -82,12 +137,12 @@ WSGI_APPLICATION = 'qr.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-#     }
-# }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    }
+}
 
 # DATABASES = {
 #     'default': {
@@ -99,15 +154,15 @@ WSGI_APPLICATION = 'qr.wsgi.application'
 #         'PORT': '',
 #     }
 # }
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',
-        'USER': 'postgres',
-        'HOST': 'db',
-        'PORT': 5432,
-    }
-}
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'postgres',
+#         'USER': 'postgres',
+#         'HOST': 'db',
+#         'PORT': 5432,
+#     }
+# }
 
 
 # Password validation
