@@ -34,6 +34,13 @@ from core.serializers import (
     VisitorSerializer,
 )
 
+class auxViewSet(viewsets.ViewSet):
+    """esta view es para los endpoints vacios que se usan para generar jerarquias,
+    como items/company o items/compani/id/seats,
+    aqui no se mostrará absolutamente nada"""
+    queryset = Company.objects.all()
+    serializer_class = CompanySerializerList
+
 class CompanyViewSet(viewsets.ModelViewSet):
     """
     Ejemplo URL:  http://localhost:8000/core/companies
@@ -157,8 +164,16 @@ class SeatUserViewSet(viewsets.ModelViewSet):
     <pre>
     ATENCION!
     #########################################################
-    ESTE ENDPOINT ESTA INCOMPLETO POR LO CUAL TIENE ERRORES
+    ESTE ENDPOINT ESTA INCOMPLETO
+
+
+    Faltan permisos, peuden haber fallas de seguridad
     #########################################################
+
+
+    para ver los datos del customUser ir al siguiente endpoint:
+
+    http://localhost:8000/core/companies/id/seats/id/users/id/custom/
     </pre>"""
     queryset = User.objects.all().order_by(Lower('username'))
     serializer_class = UserSerializerList
@@ -333,16 +348,11 @@ class SeatAddress(generics.RetrieveUpdateDestroyAPIView,
 
 class CompanyVisitor(viewsets.ModelViewSet):
     """
-    Ejemplo URL: http://localhost:8000/core/companies/1/seats
-    -List: Lista todas las sedes de la compañia,
-    cuando se hace un post para crear una sede no se debe especificar
-    la compañia, el post automaticamente agrega la compañia en la cual se
-    esta creando la sede.
-    El address de la sede se agrega en otro endpoint.
-    Se filtra por el campo name  /?search=(name).
-    al hacer post se debe espesificar el id de la compañia de la sede
-    en el JSON en el campo company.
-    -Detail: muestra los detalles de una sede, permite editarla y eliminarla,
+    En este endpint se lsitan y se registran los visitantes
+    de la compañia que registran sus items.
+
+
+    La forma de registrar un visitante se hace con el siguiente JSON
 
 
     {
@@ -352,6 +362,8 @@ class CompanyVisitor(viewsets.ModelViewSet):
     "dni": "5457767",
     "enabled": true
     }
+
+    La compañia se añade automaticamente en la view
 
     """
 
@@ -388,7 +400,6 @@ class CompanyVisitor(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def create(self, request, company_pk):
-        print(request.data)
         data = request.data.copy()
         data["company"] = company_pk
         serializer = VisitorSerializer(data=data)

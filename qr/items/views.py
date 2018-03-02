@@ -11,6 +11,9 @@ from rest_framework.views import APIView
 from ubication.models import Location
 from core.models import Seat
 from django.db.models import F, ExpressionWrapper
+from rest_framework.filters import (
+    SearchFilter,
+)
 
 
 from items.models import (
@@ -27,6 +30,7 @@ from items.serializers import (
     TypeItemSerializer,
     Branderializer,
     RegisterItem,
+    ChekinCreateSerializer,
 )
 class CheckInViewSet(viewsets.ModelViewSet):
     """"en este endpoint se registra la entrada de salida de ItemSerializer
@@ -40,17 +44,94 @@ class CheckInViewSet(viewsets.ModelViewSet):
     queryset = Checkin.objects.all()
     serializer_class = ChekinSerializer
 
+    def post(self, request, company_pk, seat_pk):
+        print("csdddfdfddsdd")
+        # data = request.data
+        # r_queryset = get_object_or_404(
+        #             Seat,
+        #             id=seat_pk,
+        #             company=company_pk,
+        #             enabled=True
+        #             )
+        # serializer = RegisterItem(data=data)
+        # if serializer.is_valid():
+        #     serializer.save()
+        #     return Response(serializer.data, status=status.HTTP_201_CREATED)
+        # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def queryAnnotate(self, checks):
+        checks = checks \
+                    .values('id', 'item', 'date', 'go_in') \
+                    .annotate(seat_id=F('seat__id'), seat_dir=F('seat__address__address'), \
+                              owner_last_name=F('item__owner__last_name'), owner_dni=F('item__owner__dni'), \
+                              type_item=F('item__type_item__kind'), owner_name=F('item__owner__first_name'), \
+                              lost=F('item__lost'),)
+        return checks
+
+    def list(self, request, company_pk, seat_pk):
+        checks = Checkin.objects.filter(seat__company__id=company_pk, seat__id=seat_pk)
+        # query = self.request.GET.get("last_name")
+        # if query:
+        #     queryset_list = queryset_list.filter(
+        #                 Q(name__icontains=query)
+        #                 ).distinct()
+            # serializer = VisitorSerializer(queryset_list, many=True)
+            # return Response(serializer.data)
+        checks = self.queryAnnotate(checks)
+        serializer = ChekinSerializer(checks, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def retrieve(self, request, company_pk, seat_pk, pk):
+        checks = Checkin.objects.filter(seat__company__id=company_pk, seat__id=seat_pk, id=pk)
+        if (not len(checks)):
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        checks = self.queryAnnotate(checks)
+        serializer = ChekinSerializer(checks, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 
 class RegisterItemViewSet(generics.CreateAPIView):
-    """"en este endpoint se hacen los registros del item,
-    solo eso, las consultas se hacen en otro endpoint"""
+    """"en este endpoint se registran los item,
+
+    Solo el item como tal, la marca y el tipo de item se hace en otros
+    endpoint.   Tambien la consulta de todos los teims existentes.
+
+    Para registrar se debe enviar un JSON con el siguiente formato:
+
+    Ejemplo de JSON:
+
+
+    {
+    "reference": "sqd",
+    "color": "rojo",
+    "description": "grande sucio y feo",
+    "lost": false,
+    "enabled": false,
+    "registration_date": "2018-03-20",
+    "type_item": 1,
+    "code": "44c5868b-b27a-4ca7-809c-ca1c1c42f1be",
+    "owner": 1,
+    "brand": 1,
+    "seatRegistration": 1,
+    "registeredBy": 3
+    }
+
+    los campos owner, brand, seatRegistration, registeredBy, type_item
+
+    llevan las id del dueño del producto, la marca , la sede, el empleado que lo registrados
+    y el tipo de item.
+
+    """
 
     serializer_class = RegisterItem
 
 
     def post(self, request, company_pk, seat_pk):
-        print(request.data)
         data = request.data
+        print(data)
+        if(str(data['seatRegistration']) != str(seat_pk)):
+            return Response(status=status.HTTP_400_BAD_REQUEST)
         r_queryset = get_object_or_404(
                     Seat,
                     id=seat_pk,
@@ -69,18 +150,29 @@ class RegisterItemViewSet(generics.CreateAPIView):
 
 class ItemViewSet(viewsets.ReadOnlyModelViewSet):
     """"
-    Aqui no se crean Items, eso será en otro endpoint,
+    En este endpoint se pueden ver todos los items registrados
+    en una compañia, junto a todos sus detalles, como dueño,
+    dni del dueño, la sede en que se registro, el empleado que lo registro,
+    entre otros...
 
-    Este endpoint solo es de lectura, se consultan todos los datos
-    de un item y su registro.
+    Este enpoint solo es de lectura, por el cualaqui no se registran items,
+    eso se ahce en la siguiente ruta:
+
+    (http://localhost:8000/items/companies/id/seats/id/registeritem/)
+
+    Se puede Buscar por medio de el dni de el dueño:
+    (http://localhost:8000/items/companies/1/items/?search=[dni de el sueño])
+    sin los []
 
     #####################################################
     este endpoint esta en construccion
 
-    Faltan permisos, filtros y test
+    Faltan permisos
     #####################################################"""
     queryset = Item.objects.all()
     serializer_class = ItemSerializer
+    filter_backends = [SearchFilter]
+    search_fields = ['owner dni']
 
     def queryAnnotate(self, items):
         items = items \
@@ -94,6 +186,11 @@ class ItemViewSet(viewsets.ReadOnlyModelViewSet):
 
     def list(self, request, company_pk):
         items = Item.objects.filter(type_item__company__id=company_pk, enabled=True)
+        query = self.request.GET.get("search")
+        if query:
+            items = items.filter(
+                        Q(owner__dni__icontains=query)
+                        ).distinct()
         items = self.queryAnnotate(items)
         serializer = ItemSerializer(items, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -129,13 +226,11 @@ class CompanyTypeItem(viewsets.ModelViewSet):
             ).order_by(
                 Lower('kind')
             )
-        # query = self.request.GET.get("last_name")
+        # query = self.request.GET.get("search")
         # if query:
         #     queryset_list = queryset_list.filter(
         #                 Q(name__icontains=query)
         #                 ).distinct()
-            # serializer = VisitorSerializer(queryset_list, many=True)
-            # return Response(serializer.data)
         serializer = TypeItemSerializer(queryset_list, many=True)
         return Response(serializer.data)
 

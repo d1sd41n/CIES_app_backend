@@ -5,7 +5,7 @@ from core import views as coreviews
 
 
 router = routers.DefaultRouter()
-router.register(r'companies', coreviews.CompanyViewSet)
+router.register(r'companies', coreviews.auxViewSet)
 type_Item_router = routers.NestedSimpleRouter(router,
                                          r'companies',
                                          lookup='company')
@@ -17,7 +17,7 @@ brand_router.register(r'brand', views.BrandItem, base_name='brand_item')
 seat_router = routers.NestedSimpleRouter(router,
                                          r'companies',
                                          lookup='company')
-seat_router.register(r'seats', coreviews.SeatViewSet, base_name='company-seats')
+seat_router.register(r'seats', coreviews.auxViewSet, base_name='company-seats')
 item_router = routers.NestedSimpleRouter(router,
                                          r'companies',
                                          lookup='company')
@@ -29,11 +29,10 @@ Seat_Check_router.register(r'check', views.CheckInViewSet, base_name='check-seat
 
 
 urlpatterns = [
-    url(r'^', include(router.urls)),
     url(r'^', include(type_Item_router.urls)),
     url(r'^', include(type_Item_router.urls)),
-    url(r'^', include(seat_router.urls)),
     url(r'^', include(item_router.urls)),
     url(r'^', include(brand_router.urls)),
+    url(r'^', include(Seat_Check_router.urls)),
     url(r'^companies/(?P<company_pk>\d+)/seats/(?P<seat_pk>\d+)/registeritem/$', views.RegisterItemViewSet.as_view(), name='register_item'),
 ]
