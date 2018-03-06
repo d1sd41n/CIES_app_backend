@@ -11,3 +11,4 @@ psycopg2==2.7.3.2
 django_cors_headers==2.1.0
 drf-nested-routers
 gunicorn
+django-filter==1.1.0

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-  <form class="" action="/pdf/" method="post">
+  <form class="" action="{% url 'pdf' company_pk=1 seat_pk=2 %}" method="post">
     {% csrf_token %}
     <label for="pages">Numero de paginas: </label>
     <input id="pages" type="text" name="pages" value="{{ current_name }}">

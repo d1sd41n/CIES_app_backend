@@ -25,16 +25,26 @@ class ItemSerializer(serializers.Serializer):
     code = serializers.CharField(max_length=35)
 
 
-class ChekinSerializer(serializers.ModelSerializer):
+class ChekinSerializer(serializers.Serializer):
+
+    id = serializers.IntegerField()
+    seat_id = serializers.IntegerField()
+    seat_dir = serializers.CharField(max_length=30)
+    item = serializers.IntegerField()
+    type_item = serializers.CharField(max_length=255)
+    lost = serializers.BooleanField(default=False)
+    owner_name = serializers.CharField(max_length=50)
+    owner_last_name = serializers.CharField(max_length=50)
+    owner_dni = serializers.CharField(max_length=30)
+    go_in = serializers.BooleanField()
+    date = serializers.DateTimeField()
+
+
+class ChekinCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Checkin
         fields = ('__all__')
-
-        # extra_kwargs = {
-        #     'company': {'write_only': True},
-        #     'enabled': {'write_only': True},
-            # }
 
 
 class TypeItemSerializer(serializers.ModelSerializer):
