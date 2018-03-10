@@ -66,3 +66,19 @@ class RegisterItem(serializers.ModelSerializer):
     class Meta:
         model = Item
         fields = ('__all__')
+
+class RegisterItemTest(serializers.ModelSerializer):
+
+    class Meta:
+        model = Item
+        fields = ('type_item',
+                  'owner',
+                  'brand',
+                  'reference',
+                  'color',
+                  'description',
+                  'lost',
+                  'enabled',
+                  'seatRegistration',
+                  'registration_date',
+                  'registeredBy')

@@ -9,7 +9,6 @@ from django.contrib.auth.models import User
 from rest_framework import status
 from ubication.models import Location
 
-
 from core.models import (
     Company,
     Seat,
@@ -160,7 +159,7 @@ class SeatUserViewSet(viewsets.ModelViewSet):
     </pre>
 
     Para filtrar ser usa ?search=(contenido), se puede buscar por
-    nit, nombre de usario y correo, fisrt_name, last_name.
+    dni, nombre de usario y correo, fisrt_name, last_name.
     <pre>
     ATENCION!
     #########################################################
@@ -178,7 +177,7 @@ class SeatUserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all().order_by(Lower('username'))
     serializer_class = UserSerializerList
     filter_backends = [SearchFilter, OrderingFilter]
-    search_fields = ['username', 'email']
+    search_fields = ['username', 'email', 'dni']
 
     def list(self, request, company_pk, seat_pk):
         queryset_list = User.objects.filter(
@@ -191,7 +190,8 @@ class SeatUserViewSet(viewsets.ModelViewSet):
                         Q(username__icontains=query) |
                         Q(first_name__icontains=query) |
                         Q(last_name__icontains=query) |
-                        Q(email__icontains=query)
+                        Q(email__icontains=query) |
+                        Q(dni__icontains=query)
                         ).distinct()
             serializer = UserSerializerList(queryset_list, many=True)
             return Response(serializer.data)
@@ -369,8 +369,8 @@ class CompanyVisitor(viewsets.ModelViewSet):
 
     queryset = Visitor.objects.all().order_by(Lower('last_name'))
     serializer_class = VisitorSerializer
-    # filter_backends = [SearchFilter, OrderingFilter]
-    # search_fields = ['name']
+    filter_backends = [SearchFilter]
+    search_fields = ['dni']
 
     def list(self, request, company_pk):
         queryset_list = Visitor.objects.filter(
@@ -379,13 +379,11 @@ class CompanyVisitor(viewsets.ModelViewSet):
             ).order_by(
                 Lower('last_name')
             )
-        # query = self.request.GET.get("last_name")
-        # if query:
-        #     queryset_list = queryset_list.filter(
-        #                 Q(name__icontains=query)
-        #                 ).distinct()
-            # serializer = VisitorSerializer(queryset_list, many=True)
-            # return Response(serializer.data)
+        query = self.request.GET.get("search")
+        if query:
+            queryset_list = Visitor.objects.filter(
+                        Q(dni__icontains=query)
+                        ).distinct()
         serializer = VisitorSerializer(queryset_list, many=True)
         return Response(serializer.data)
 

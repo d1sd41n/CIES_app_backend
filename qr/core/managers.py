@@ -56,7 +56,7 @@ class UserManager(models.Manager):
                 'gender': gender_selection[randint(1, 2)],
                 'preferencial': selection[randint(1, 2)],
                 'last_login': None,
-                'dni': randint(11111, 99999),
+                'dni': randint(111111, 999999),
                 'email': "Usuario" + str(randint(1, 9999)) + "@" + "email" + ".com"}
         if api:
             return data
@@ -95,9 +95,6 @@ class CustomUserManager(models.Manager):
         return self.create_custom_user(data)
 
     def create_custom_user(self, data):
-        print("create custom user")
-        print(data)
-        print("000000000000000000000000000000000000000")
         custom_user = self.create(address=data['address'],
                                   gender=data['gender'],
                                   user=data['user'],
@@ -106,3 +103,31 @@ class CustomUserManager(models.Manager):
         #                                                     phone=enterprise.models.Phone.objects.mockup())
         custom_user.save()
         return custom_user
+
+
+
+class VisitorManager(models.Manager):
+    def mockup(self, api=False):
+        selection = {1: True, 2: False}
+        gender_selection = {1: 'F', 2: 'M'}
+        data = {'id': None,
+                'first_name': "visitante" + str(randint(1, 9999)),
+                'last_name': "Apellido" + str(randint(1, 9999)),
+                'is_active': selection[randint(1, 2)],
+                'gender': gender_selection[randint(1, 2)],
+                'dni': randint(111111, 999999),
+                'company': core.models.Company.objects.mockup(),
+                'email': "Usuario" + str(randint(1, 9999)) + "@" + "email" + ".com"}
+        if api:
+            return data
+        return self.create_visitor(data)
+
+    def create_visitor(self, data):
+        visitor = core.models.Visitor.objects.create(first_name=data['first_name'],
+                                   last_name=data['last_name'],
+                                   email=data['email'],
+                                   gender=data['gender'],
+                                   dni=data['dni'],
+                                   company=data['company'],)
+        visitor.save()
+        return visitor

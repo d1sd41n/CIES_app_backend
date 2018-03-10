@@ -129,7 +129,6 @@ class RegisterItemViewSet(generics.CreateAPIView):
 
     def post(self, request, company_pk, seat_pk):
         data = request.data
-        print(data)
         if(str(data['seatRegistration']) != str(seat_pk)):
             return Response(status=status.HTTP_400_BAD_REQUEST)
         r_queryset = get_object_or_404(

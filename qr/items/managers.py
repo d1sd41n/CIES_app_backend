@@ -1,20 +1,21 @@
 from django.db import models
-from core.models import Seat
+from core.models import Seat, Company
 from random import randint
 import items
 import core
+import codes
 
 
 class TypeItemManager(models.Manager):
     def mockup(self, api=False):
         data = {'id': None, 'kind': "Tipo item" + str(randint(1, 100)),
-                'seat': Seat.objects.mockup()}
+                'company': Company.objects.mockup()}
         if api:
             return data
         return self.create_item_kind(data)
 
     def create_item_kind(self, data):
-        type_item = self.create(kind=data['kind'], seat=data['seat'])
+        type_item = self.create(kind=data['kind'], company=data['company'])
         type_item.save()
         return type_item
 
@@ -36,14 +37,21 @@ class BrandManager(models.Manager):
 class ItemManager(models.Manager):
     def mockup(self, api=False):
         item_type = items.models.TypeItem.objects.mockup()
-        user = core.managers.UserManager().mockup()
+        visitor = core.managers.VisitorManager().mockup()
         brand = items.models.Brand.objects.mockup()
+        registeredBy = core.managers.UserManager().mockup()
+        seatRegistration = Seat.objects.mockup()
+        # code = codes.managers.CodeManager().mockup()
         data = {'id': None, 'color': "color" + str(randint(1, 100)),
                 'reference': str(randint(1, 100)),
                 'description': "ssdadadf",
                 'type_item': item_type,
                 'brand': brand,
-                'owner': user}
+                'owner': visitor,
+                'registeredBy': registeredBy,
+                'seatRegistration': seatRegistration,
+                # 'code': code
+                }
         if api:
             return data
         return self.create_item(data)
@@ -54,7 +62,11 @@ class ItemManager(models.Manager):
                            description=data['description'],
                            type_item=data['type_item'],
                            brand=data['brand'],
-                           owner=data['owner'])
+                           owner=data['owner'],
+                           registeredBy=data['registeredBy'],
+                           seatRegistration=data['seatRegistration'],
+                           code=None
+                           )
         item.save()
         return item
 
