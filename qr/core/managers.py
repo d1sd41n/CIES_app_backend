@@ -114,7 +114,6 @@ class VisitorManager(models.Manager):
                 'first_name': "visitante" + str(randint(1, 9999)),
                 'last_name': "Apellido" + str(randint(1, 9999)),
                 'is_active': selection[randint(1, 2)],
-                'gender': gender_selection[randint(1, 2)],
                 'dni': randint(111111, 999999),
                 'company': core.models.Company.objects.mockup(),
                 'email': "Usuario" + str(randint(1, 9999)) + "@" + "email" + ".com"}
@@ -126,7 +125,6 @@ class VisitorManager(models.Manager):
         visitor = core.models.Visitor.objects.create(first_name=data['first_name'],
                                    last_name=data['last_name'],
                                    email=data['email'],
-                                   gender=data['gender'],
                                    dni=data['dni'],
                                    company=data['company'],)
         visitor.save()
