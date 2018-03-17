@@ -26,8 +26,6 @@ simplejson==3.13.2
 six==1.11.0
 psycopg2==2.7.3.2
 django_cors_headers==2.1.0
-drf-nested-routers
-gunicorn
 django-filter==1.1.0
 sqlparse==0.2.4
 uritemplate==3.0.0

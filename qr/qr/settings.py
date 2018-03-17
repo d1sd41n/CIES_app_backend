@@ -17,10 +17,10 @@ import raven
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 #Raven configuration for Sentry logs
-RAVEN_CONFIG = {
-    'dsn': 'https://e4b4318b6d44401d9aa0f7613cf4139c:f2bd554a05fd45c982c44ce264819ab2@sentry.io/297344',
-    'release': raven.fetch_git_sha(os.path.abspath(os.pardir)),
-}
+# RAVEN_CONFIG = {
+#     'dsn': 'https://e4b4318b6d44401d9aa0f7613cf4139c:f2bd554a05fd45c982c44ce264819ab2@sentry.io/297344',
+#     'release': raven.fetch_git_sha(os.path.abspath(os.pardir)),
+# }
 # client.captureException()
 LOGGING = {
     'version': 1,
@@ -137,12 +137,15 @@ WSGI_APPLICATION = 'qr.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
-}
+####################################################
+##esta configuracuon es para el desarrollo#########
+###################################################
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+#     }
+# }
 
 # DATABASES = {
 #     'default': {
@@ -154,15 +157,19 @@ DATABASES = {
 #         'PORT': '',
 #     }
 # }
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'postgres',
-#         'USER': 'postgres',
-#         'HOST': 'db',
-#         'PORT': 5432,
-#     }
-# }
+
+#######################################
+# esta configuracuon es para docker####
+#######################################
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'postgres',
+        'USER': 'postgres',
+        'HOST': 'db',
+        'PORT': 5432,
+    }
+}
 
 
 # Password validation

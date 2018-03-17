@@ -23,6 +23,7 @@ class TypeItem(models.Model):
 class Brand(models.Model):
     brand = models.CharField(max_length=30)
     type_item = models.ForeignKey(TypeItem, null=True, blank=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True)
     enabled = models.BooleanField(default=True)
     objects = BrandManager()
 

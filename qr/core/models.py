@@ -5,6 +5,7 @@ from core.managers import (
                             CustomUserManager,
                             CompanyManager,
                             SeatManager,
+                            VisitorManager,
                             )
 
 
@@ -91,10 +92,11 @@ class Visitor(models.Model):
     """
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
-    gender = models.CharField(max_length=2, choices=GENDER_CHOICE)
     dni = models.CharField(max_length=30, unique=True)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     enabled = models.BooleanField(default=True)
+    email = models.EmailField(blank=True, null=True)
+    objects = VisitorManager()
 
     def __str__(self):
         return '{0}: {1} {2}'.format(self.first_name,
