@@ -36,28 +36,39 @@ class CheckInViewSet(viewsets.ModelViewSet):
     """"en este endpoint se registra la entrada de salida de ItemSerializer
         en la sede
 
+        Ejemplo de JSON:
+
+        {
+        "go_in": false,
+        "item": 1,
+        "seat": 1,
+        "worker": 3
+        }
+
+        se debe introducir el un booleano true si va de entrada y false si es de salida
+        la id de la sede, id del item e id del trabajador que lo escanea.
+
     #####################################################
     este endpoint esta en construccion
 
     Faltan permisos, filtros y otros detalles de seguridad
     #####################################################"""
     queryset = Checkin.objects.all()
-    serializer_class = ChekinSerializer
+    serializer_class = ChekinCreateSerializer
 
-    def post(self, request, company_pk, seat_pk):
-        print("csdddfdfddsdd")
-        # data = request.data
+    def create(self, request, company_pk, seat_pk):
+        data = request.data
         # r_queryset = get_object_or_404(
         #             Seat,
         #             id=seat_pk,
         #             company=company_pk,
         #             enabled=True
         #             )
-        # serializer = RegisterItem(data=data)
-        # if serializer.is_valid():
-        #     serializer.save()
-        #     return Response(serializer.data, status=status.HTTP_201_CREATED)
-        # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer = ChekinCreateSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def queryAnnotate(self, checks):
         checks = checks \
@@ -69,6 +80,7 @@ class CheckInViewSet(viewsets.ModelViewSet):
         return checks
 
     def list(self, request, company_pk, seat_pk):
+        print("dfwfefgefhehef")
         checks = Checkin.objects.filter(seat__company__id=company_pk, seat__id=seat_pk)
         # query = self.request.GET.get("last_name")
         # if query:
@@ -129,7 +141,7 @@ class RegisterItemViewSet(generics.CreateAPIView):
 
     def post(self, request, company_pk, seat_pk):
         data = request.data
-        if(str(data['seatRegistration']) != str(seat_pk)):
+        if(str(data['seat_registration']) != str(seat_pk)):
             return Response(status=status.HTTP_400_BAD_REQUEST)
         r_queryset = get_object_or_404(
                     Seat,
@@ -175,11 +187,11 @@ class ItemViewSet(viewsets.ReadOnlyModelViewSet):
 
     def queryAnnotate(self, items):
         items = items \
-                    .values('id', 'reference', 'description', 'lost', 'color', 'registration_date', 'registeredBy') \
+                    .values('id', 'reference', 'description', 'lost', 'color', 'registration_date', 'registered_by') \
                     .annotate(type_item=F('type_item__kind'), owner_name=F('owner__first_name'), \
                               owner_last_name=F('owner__last_name'), owner_dni=F('owner__dni'), \
-                              brand=F('brand__brand'), registered_in_seat=F('seatRegistration__name'), \
-                              registered_in_seat_id=F('seatRegistration'), company_id=F('seatRegistration__company'), \
+                              brand=F('brand__brand'), registered_in_seat=F('seat_registration__name'), \
+                              registered_in_seat_id=F('seat_registration'), company_id=F('seat_registration__company'), \
                               code=F('code__code'))
         return items
 
@@ -188,7 +200,7 @@ class ItemViewSet(viewsets.ReadOnlyModelViewSet):
         query = self.request.GET.get("search")
         if query:
             items = items.filter(
-                        Q(owner__dni__icontains=query)
+                        Q(owner__dni__iexact=query)
                         ).distinct()
         items = self.queryAnnotate(items)
         serializer = ItemSerializer(items, many=True)
@@ -305,7 +317,6 @@ class BrandItem(viewsets.ModelViewSet):
                     enabled=True
                     )
         data = request.data.copy()
-        data["company"] = company_pk
         data["type_item"] = typeitem_pk
         serializer = Branderializer(data=data)
         if serializer.is_valid():

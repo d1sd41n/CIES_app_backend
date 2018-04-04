@@ -114,7 +114,6 @@ class CustomUserSerializer(serializers.ModelSerializer):
         model = CustomUser
         fields = (
             'id',
-            'gender',
             'preferencial',
             'nit',
             'dni',
@@ -127,7 +126,6 @@ class CustomUserSerializer(serializers.ModelSerializer):
         model = CustomUser
         fields = (
             'id',
-            'gender',
             'dni',
         )
 

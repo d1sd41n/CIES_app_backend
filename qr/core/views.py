@@ -382,7 +382,7 @@ class CompanyVisitor(viewsets.ModelViewSet):
         query = self.request.GET.get("search")
         if query:
             queryset_list = Visitor.objects.filter(
-                        Q(dni__icontains=query)
+                        Q(dni__iexact=query)
                         ).distinct()
         serializer = VisitorSerializer(queryset_list, many=True)
         return Response(serializer.data)

@@ -53,7 +53,6 @@ class UserManager(models.Manager):
                 'is_superuser': selection[randint(1, 2)],
                 'is_staff': selection[randint(1, 2)],
                 'password': "AdiVIne" + str(randint(111111, 999999999)),
-                'gender': gender_selection[randint(1, 2)],
                 'preferencial': selection[randint(1, 2)],
                 'last_login': None,
                 'dni': randint(111111, 999999),
@@ -72,7 +71,6 @@ class UserManager(models.Manager):
                                    password=data['password'])
         user.save()
         customUser = core.models.CustomUser.objects.create(
-                                 gender=data['gender'],
                                  user=user,
                                  dni=data['dni'],
                                  )
@@ -89,15 +87,12 @@ class CustomUserManager(models.Manager):
                 'dni': randint(11111, 99999)}
         if api:
             return data
-        data['address'] = Location.objects.mockup()
         data['user'] = UserManager().mockup()
         data['id'] = data['user'].id
         return self.create_custom_user(data)
 
     def create_custom_user(self, data):
-        custom_user = self.create(address=data['address'],
-                                  gender=data['gender'],
-                                  user=data['user'],
+        custom_user = self.create(user=data['user'],
                                   dni=data['dni'])
         # enterprise.models.CustomUserHasPhone.objects.create(user=custom_user,
         #                                                     phone=enterprise.models.Phone.objects.mockup())
@@ -115,8 +110,7 @@ class VisitorManager(models.Manager):
                 'last_name': "Apellido" + str(randint(1, 9999)),
                 'is_active': selection[randint(1, 2)],
                 'dni': randint(111111, 999999),
-                'company': core.models.Company.objects.mockup(),
-                'email': "Usuario" + str(randint(1, 9999)) + "@" + "email" + ".com"}
+                'company': core.models.Company.objects.mockup(),}
         if api:
             return data
         return self.create_visitor(data)
@@ -124,7 +118,6 @@ class VisitorManager(models.Manager):
     def create_visitor(self, data):
         visitor = core.models.Visitor.objects.create(first_name=data['first_name'],
                                    last_name=data['last_name'],
-                                   email=data['email'],
                                    dni=data['dni'],
                                    company=data['company'],)
         visitor.save()

@@ -23,7 +23,6 @@ class TypeItem(models.Model):
 class Brand(models.Model):
     brand = models.CharField(max_length=30)
     type_item = models.ForeignKey(TypeItem, null=True, blank=True)
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True)
     enabled = models.BooleanField(default=True)
     objects = BrandManager()
 
@@ -41,9 +40,9 @@ class Item(models.Model):
     description = models.CharField(max_length=255, blank=True)
     lost = models.BooleanField(default=False)
     enabled = models.BooleanField(default=True)
-    seatRegistration = models.ForeignKey(Seat, null=True)
-    registration_date = models.DateField(default=timezone.now, null=True)
-    registeredBy = models.ForeignKey(User, null=True)
+    seat_registration = models.ForeignKey(Seat, null=True)
+    registration_date = models.DateTimeField(default=timezone.now, null=True)
+    registered_by = models.ForeignKey(User, null=True)
     objects = ItemManager()
 
     def __str__(self):
@@ -55,8 +54,10 @@ class Item(models.Model):
 class LostItem(models.Model):
     item = models.OneToOneField(Item)
     description = models.CharField(max_length=255)
-    date = models.DateTimeField()
+    date = models.DateTimeField(default=timezone.now)
     seat = models.ForeignKey(Seat, null=True)
+    email = models.EmailField(blank=True, null=True)
+    visitor_phone = models.CharField(max_length=20, blank=True, null=True)
     objects = LostItemManager()
 
     def __str__(self):

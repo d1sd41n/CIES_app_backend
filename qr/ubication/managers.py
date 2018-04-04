@@ -6,15 +6,13 @@ import ubication
 class CountryManager(models.Manager):
     def mockup(self, api=False):
         data = {'id': None, 'name': "Country"+str(randint(1, 99)),
-                'postalcode': str(randint(100, 999)),
-                'vat': float(randint(1, 20))}
+                'postalcode': str(randint(100, 999))}
         if api:
             return data
         return self.create_country(data)
 
     def create_country(self, data):
-        country = self.create(name=data['name'], postalcode=data['postalcode'],
-                              vat=data['vat'])
+        country = self.create(name=data['name'], postalcode=data['postalcode'],)
         country.save()
         return country
 
