@@ -20,9 +20,6 @@ class CustomUser(models.Model):
     Atributos:
     preferencial (bool): se usa para hacer descuentos a este usuario
     """
-    address = models.ForeignKey(Location, on_delete=models.CASCADE, blank=True,
-                                null=True)
-    gender = models.CharField(max_length=2, choices=GENDER_CHOICE)
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     dni = models.CharField(max_length=30, unique=True)
     enabled = models.BooleanField(default=True)
@@ -95,7 +92,6 @@ class Visitor(models.Model):
     dni = models.CharField(max_length=30, unique=True)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     enabled = models.BooleanField(default=True)
-    email = models.EmailField(blank=True, null=True)
     objects = VisitorManager()
 
     def __str__(self):

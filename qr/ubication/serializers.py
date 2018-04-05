@@ -7,7 +7,7 @@ class CountrySerializerList(serializers.ModelSerializer):
 
     class Meta:
         model = Country
-        fields = ('id', 'name', 'vat', 'postalcode')
+        fields = ('id', 'name', 'postalcode')
 
 
 class CountrySerializerDetail(serializers.ModelSerializer):

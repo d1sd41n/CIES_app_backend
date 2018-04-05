@@ -39,8 +39,8 @@ class ItemManager(models.Manager):
         item_type = items.models.TypeItem.objects.mockup()
         visitor = core.managers.VisitorManager().mockup()
         brand = items.models.Brand.objects.mockup()
-        registeredBy = core.managers.UserManager().mockup()
-        seatRegistration = Seat.objects.mockup()
+        registered_by = core.managers.UserManager().mockup()
+        seat_registration = Seat.objects.mockup()
         # code = codes.managers.CodeManager().mockup()
         data = {'id': None, 'color': "color" + str(randint(1, 100)),
                 'reference': str(randint(1, 100)),
@@ -48,8 +48,8 @@ class ItemManager(models.Manager):
                 'type_item': item_type,
                 'brand': brand,
                 'owner': visitor,
-                'registeredBy': registeredBy,
-                'seatRegistration': seatRegistration,
+                'registered_by': registered_by,
+                'seat_registration': seat_registration,
                 # 'code': code
                 }
         if api:
@@ -63,8 +63,8 @@ class ItemManager(models.Manager):
                            type_item=data['type_item'],
                            brand=data['brand'],
                            owner=data['owner'],
-                           registeredBy=data['registeredBy'],
-                           seatRegistration=data['seatRegistration'],
+                           registered_by=data['registered_by'],
+                           seat_registration=data['seat_registration'],
                            code=None
                            )
         item.save()
@@ -74,9 +74,11 @@ class ItemManager(models.Manager):
 class CheckinManager(models.Manager):
     def mockup(self, api=False):
         item = items.models.Item.objects.mockup()
+        worker = core.managers.UserManager().mockup()
         data = {'id': None,
                 'item': item,
                 'go_in': True,
+                'worker': worker,
                 'seat':  Seat.objects.mockup()}
         if api:
             return data
@@ -85,6 +87,7 @@ class CheckinManager(models.Manager):
     def create_chekin(self, data):
         chekin = self.create(item=data['item'],
                              go_in=data['go_in'],
+                             worker=data['worker'],
                              seat=data['seat'])
         chekin.save()
         return chekin

@@ -4,7 +4,7 @@ services:
   nginx:
     image: nginx:latest
     ports:
-      - "8088:8088"
+      - "80:80"
     volumes:
       - ./qr:/qr
       - ./nginx:/etc/nginx/conf.d
@@ -14,10 +14,10 @@ services:
     image: postgres
   web:
     build: .
-    command: bash -c "python manage.py collectstatic --noinput && python manage.py makemigrations && python manage.py migrate && gunicorn qr.wsgi -b 0.0.0.0:8088"
+    command: bash -c "python manage.py collectstatic --noinput && python manage.py makemigrations && python manage.py migrate && gunicorn qr.wsgi -b 0.0.0.0:80"
     volumes:
       - ./qr:/qr
     depends_on:
       - db
     expose:
-      - "8088"
+      - "80"

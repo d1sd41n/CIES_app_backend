@@ -21,7 +21,7 @@ class ItemSerializer(serializers.Serializer):
     registered_in_seat_id = serializers.IntegerField()
     company_id = serializers.IntegerField()
     registration_date = serializers.DateField()
-    registeredBy = serializers.IntegerField()
+    registered_by = serializers.IntegerField()
     code = serializers.CharField(max_length=35)
 
 
@@ -45,6 +45,11 @@ class ChekinCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Checkin
         fields = ('__all__')
+        extra_kwargs = {
+            'id': {'read_only': True},
+            'date': {'read_only': True},
+            }
+
 
 
 class TypeItemSerializer(serializers.ModelSerializer):
@@ -79,6 +84,6 @@ class RegisterItemTest(serializers.ModelSerializer):
                   'description',
                   'lost',
                   'enabled',
-                  'seatRegistration',
+                  'seat_registration',
                   'registration_date',
-                  'registeredBy')
+                  'registered_by')

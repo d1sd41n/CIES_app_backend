@@ -35,8 +35,8 @@ class TestItem(APITestCase):
 
     def test_create_item_api(self):
         print("starting Item Test api")
-        companyid = str(self.serializer_attributes['seatRegistration'].company.id)
-        seatid = str(self.serializer_attributes['seatRegistration'].id)
+        companyid = str(self.serializer_attributes['seat_registration'].company.id)
+        seatid = str(self.serializer_attributes['seat_registration'].id)
         url = '/items/companies/' + companyid + '/seats/'+ seatid + '/registeritem/'
         data = self.serializer.data
         response = self.client.post(url, data, format='json')
@@ -50,3 +50,27 @@ class TestLostItem(APITestCase):
         chekin = items.models.LostItem.objects.mockup()
         print("TestLostItem model test was correct")
         return chekin
+
+
+@tag('TestCheck')
+class TestCheck(APITestCase):
+
+    def setUp(self):
+        print("starting Checkin Test")
+        self.serializer_attributes = items.models.Checkin.objects.mockup(api=True)
+        self.serializer = items.serializers.ChekinCreateSerializer(instance=self.serializer_attributes)
+
+    def test_check(self):
+        check = items.models.Checkin.objects.mockup()
+        print("Checkin model test was correct")
+        return check
+
+    def test_check_api(self):
+        print("starting checkin Test api")
+        companyid = str(self.serializer_attributes['seat'].company.id)
+        seatid = str(self.serializer_attributes['seat'].id)
+        url = '/items/companies/' + companyid + '/seats/'+ seatid + '/check/'
+        data = self.serializer.data
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        print("Visitors serializer and API tests were correct")

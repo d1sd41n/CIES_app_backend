@@ -7,7 +7,6 @@ class Country(models.Model):
     """se almacena el pais de ubicacion"""
     name = models.CharField(max_length=50)
     postalcode = models.CharField(max_length=3, null=True, blank=True)
-    vat = models.FloatField(null=True, blank=True)
     objects = CountryManager()
 
     class Meta:
