@@ -4,6 +4,7 @@ from items.models import (
         Checkin,
         TypeItem,
         Brand,
+        LostItem
 )
 
 class ItemSerializer(serializers.Serializer):
@@ -87,3 +88,34 @@ class RegisterItemTest(serializers.ModelSerializer):
                   'seat_registration',
                   'registration_date',
                   'registered_by')
+
+
+class LostItemCreateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = LostItem
+        fields = ('__all__')
+
+        extra_kwargs = {
+            'enabled': {'read_only': True},
+            'closed_case': {'read_only': True},
+            }
+
+
+class LostItemSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    description = serializers.CharField(max_length=255)
+    item_reference = serializers.CharField(max_length=30)
+    item_color = serializers.CharField(max_length=30)
+    description = serializers.CharField(max_length=255)
+    type_item = serializers.CharField(max_length=30)
+    owner_name = serializers.CharField(max_length=50)
+    owner_last_name = serializers.CharField(max_length=50)
+    owner_dni = serializers.CharField(max_length=30)
+    item_brand = serializers.CharField(max_length=30)
+    date = serializers.DateTimeField()
+    lost_in_seat = serializers.CharField(max_length=100)
+    lost_in_seat_id = serializers.IntegerField()
+    email = serializers.EmailField()
+    visitor_phone = serializers.CharField(max_length=20)
+    closed_case = serializers.BooleanField(default=False)

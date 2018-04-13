@@ -22,6 +22,10 @@ item_router = routers.NestedSimpleRouter(router,
                                          r'companies',
                                          lookup='company')
 item_router.register(r'items', views.ItemViewSet, base_name='company-items')
+lost_item_router = routers.NestedSimpleRouter(router,
+                                         r'companies',
+                                         lookup='company')
+lost_item_router.register(r'lostitem', views.LostItemView, base_name='lost-item')
 Seat_Check_router = routers.NestedSimpleRouter(seat_router,
                                          r'seats',
                                          lookup='seat')
@@ -34,5 +38,6 @@ urlpatterns = [
     url(r'^', include(item_router.urls)),
     url(r'^', include(brand_router.urls)),
     url(r'^', include(Seat_Check_router.urls)),
+    url(r'^', include(lost_item_router.urls)),
     url(r'^companies/(?P<company_pk>\d+)/seats/(?P<seat_pk>\d+)/registeritem/$', views.RegisterItemViewSet.as_view(), name='register_item'),
 ]

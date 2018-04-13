@@ -24,10 +24,14 @@ class CompanyManager(models.Manager):
 
 
 class SeatManager(models.Manager):
-    def mockup(self, api=False):
+    def mockup(self, api=False, company=0):
+        if(company == 0):
+            company = core.models.Company.objects.mockup()
+        else:
+            company = company
         data = {'id': None, 'address': Location.objects.mockup(),
                 'name': "Seat" + str(randint(1, 99)) + "-seat",
-                'company': core.models.Company.objects.mockup(),
+                'company': company,
                 'email': "seat" + str(randint(1, 50)) + "@" +
                 "seat" + str(randint(1, 50)) + ".com"}
         if api:

@@ -54,14 +54,16 @@ class Item(models.Model):
 class LostItem(models.Model):
     item = models.OneToOneField(Item)
     description = models.CharField(max_length=255)
-    date = models.DateTimeField(default=timezone.now)
+    date = models.DateTimeField(null=False)
     seat = models.ForeignKey(Seat, null=True)
     email = models.EmailField(blank=True, null=True)
     visitor_phone = models.CharField(max_length=20, blank=True, null=True)
+    closed_case = models.BooleanField(default=False)
+    enabled = models.BooleanField(default=True)
     objects = LostItemManager()
 
     def __str__(self):
-        return self.item
+        return self.item.type_item.kind
 
 
 class Checkin(models.Model):
@@ -71,3 +73,6 @@ class Checkin(models.Model):
     date = models.DateTimeField(default=timezone.now, blank=False)
     go_in = models.BooleanField()
     objects = CheckinManager()
+
+    def __str__(self):
+        return self.item.type_item.kind

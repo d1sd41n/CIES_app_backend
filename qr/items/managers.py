@@ -96,10 +96,16 @@ class CheckinManager(models.Manager):
 class LostItemManager(models.Manager):
     def mockup(self, api=False):
         item = items.models.Item.objects.mockup()
+        company = item.type_item.company
+        seat = Seat.objects.mockup(company=company)
         data = {'id': None,
                 'item': item,
                 'date': "2017-09-15T01:03:00",
-                'description':  "ddssdasdas"}
+                'description':  "ddssdasdas",
+                "email": "tocameernesto@gmail.com",
+                "seat": seat,
+                "visitor_phone": "123456",
+                }
         if api:
             return data
         return self.create_lost_item(data)
@@ -107,6 +113,8 @@ class LostItemManager(models.Manager):
     def create_lost_item(self, data):
         l_item = self.create(item=data['item'],
                              date=data['date'],
-                             description=data['description'])
+                             description=data['description'],
+                             seat=data['seat'],
+                             visitor_phone=data['visitor_phone'])
         l_item.save()
         return l_item

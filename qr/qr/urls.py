@@ -12,6 +12,7 @@ urlpatterns = [
     url(r'^ubication/', include('ubication.urls')),
     url(r'^core/', include('core.urls')),
     url(r'^items/', include('items.urls')),
+    url(r'^disabled/', include('disabled.urls')),
     url(r'^docs/', schema_view),
 ]
 

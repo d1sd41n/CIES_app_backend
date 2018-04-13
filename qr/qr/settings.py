@@ -151,12 +151,12 @@ WSGI_APPLICATION = 'qr.wsgi.application'
 ####################################################
 ##esta configuracuon es para el desarrollo#########
 ###################################################
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-#     }
-# }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    }
+}
 ################################################################
 #####esta configuracion es para usar postgre sin docker##########
 ##################################################################
@@ -173,15 +173,15 @@ WSGI_APPLICATION = 'qr.wsgi.application'
 #######################################
 # esta configuracuon es para docker####
 #######################################
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',
-        'USER': 'postgres',
-        'HOST': 'db',
-        'PORT': 5432,
-    }
-}
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'postgres',
+#         'USER': 'postgres',
+#         'HOST': 'db',
+#         'PORT': 5432,
+#     }
+# }
 ########################################
 
 # Password validation
