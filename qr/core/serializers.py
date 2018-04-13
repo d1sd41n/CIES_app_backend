@@ -120,16 +120,6 @@ class CustomUserSerializer(serializers.ModelSerializer):
         )
 
 
-class CustomUserSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = CustomUser
-        fields = (
-            'id',
-            'dni',
-        )
-
-
 class AddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = Location

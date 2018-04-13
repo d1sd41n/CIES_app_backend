@@ -34,7 +34,7 @@ class CustomUser(models.Model):
 class Company(models.Model):
     """Almacena datos generales de una empresa.
     """
-    nit = models.CharField(max_length=15)
+    nit = models.CharField(max_length=15, unique=True)
     email = models.EmailField(blank=True, null=True)
     name = models.CharField(max_length=100)
     website = models.URLField(blank=True, null=True)

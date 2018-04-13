@@ -22,6 +22,7 @@ from items.models import (
     Item,
     LostItem,
     Checkin,
+    LostItem,
 )
 
 from items.serializers import (
@@ -31,6 +32,8 @@ from items.serializers import (
     Branderializer,
     RegisterItem,
     ChekinCreateSerializer,
+    LostItemCreateSerializer,
+    LostItemSerializer,
 )
 class CheckInViewSet(viewsets.ModelViewSet):
     """"en este endpoint se registra la entrada de salida de ItemSerializer
@@ -113,7 +116,7 @@ class RegisterItemViewSet(generics.CreateAPIView):
 
     Ejemplo de JSON:
 
-
+    <pre>
     {
     "reference": "sqd",
     "color": "rojo",
@@ -128,6 +131,7 @@ class RegisterItemViewSet(generics.CreateAPIView):
     "seatRegistration": 1,
     "registeredBy": 3
     }
+    </pre>
 
     los campos owner, brand, seatRegistration, registeredBy, type_item
 
@@ -210,7 +214,7 @@ class ItemViewSet(viewsets.ReadOnlyModelViewSet):
         items = Item.objects.filter(pk=pk, type_item__company__id=company_pk, enabled=True)
         if (not len(items)):
             return Response(status=status.HTTP_404_NOT_FOUND)
-        item = items = self.queryAnnotate(items)
+        item = self.queryAnnotate(items)
         serializer = ItemSerializer(item, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -323,3 +327,63 @@ class BrandItem(viewsets.ModelViewSet):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class LostItemView(viewsets.ModelViewSet):
+    """
+    endpoint de items perdidos,
+    este es el JSON con el que se registran items perdidos
+    <pre>
+    {
+    "description": "el tonto del culo dejo el portatil en una mesa sola y alguien se lo agarro sin que se diera nicuenta",
+    "date": "2018-03-01T18:11:12.425748-05:20",
+    "email": "tocameernesto@gmail.com",
+    "visitor_phone": "123456",
+    "item": 2,
+    "seat": 1
+    }
+    </pre>
+
+    en el campo item y seats van las id de los correspondientes.
+
+    Faltan filtros y permisos
+    """
+
+
+    queryset = LostItem.objects.all()
+    serializer_class = LostItemCreateSerializer
+    # filter_backends = [SearchFilter, OrderingFilter]
+    # search_fields = ['name']
+
+    # def create(self, request, company_pk):
+    #     print(request.data)
+
+    def queryAnnotate(self, items):
+        lostitems = items \
+                    .values('id', 'date', 'description', 'email', 'visitor_phone', 'closed_case') \
+                    .annotate(item_reference=F('item__reference'), item_color=F('item__color'), \
+                              type_item=F('item__type_item__kind'), owner_dni=F('item__owner__dni'), \
+                              item_brand=F('item__brand__brand'), owner_name=F('item__owner__first_name'), \
+                              owner_last_name=F('item__owner__last_name'), lost_in_seat_id=F('seat__id'), \
+                              lost_in_seat=F('seat__name'))
+        return lostitems
+
+    def list(self, request, company_pk):
+        lost_items = LostItem.objects.filter(seat__company__id=company_pk, enabled=True)
+        query = self.request.GET.get("search")
+        # if query:
+        #     items = items.filter(
+        #                 Q(owner__dni__iexact=query)
+        #                 ).distinct()
+        lost_items = self.queryAnnotate(lost_items)
+        serializer = LostItemSerializer(lost_items, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def retrieve(self, request, company_pk, pk):
+        lost_items = LostItem.objects.filter(pk=pk, seat__company__id=company_pk, enabled=True)
+        if (not len(lost_items)):
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        lost_items = self.queryAnnotate(lost_items)
+        serializer = LostItemSerializer(lost_items, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

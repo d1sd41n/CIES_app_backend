@@ -46,10 +46,24 @@ class TestItem(APITestCase):
 
 @tag('TestLostItem')
 class TestLostItem(APITestCase):
+
+    def setUp(self):
+        print("starting lostitem Test")
+        self.serializer_attributes = items.models.LostItem.objects.mockup(api=True)
+        self.serializer = items.serializers.LostItemCreateSerializer(instance=self.serializer_attributes)
+
     def test_create_product_kind(self):
-        chekin = items.models.LostItem.objects.mockup()
+        lostitem = items.models.LostItem.objects.mockup()
         print("TestLostItem model test was correct")
-        return chekin
+        return lostitem
+
+    def test_lostitem_api(self):
+        companyid = str(self.serializer_attributes['seat'].company.id)
+        url = '/items/companies/' + companyid + '/lostitem/'
+        data = self.serializer.data
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        print("lostitem serializer and API tests were correct")
 
 
 @tag('TestCheck')
