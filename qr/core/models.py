@@ -1,24 +1,18 @@
-from django.db import models
-from django.contrib.auth.models import User
-from ubication.models import Location
 from core.managers import (
                             CustomUserManager,
                             CompanyManager,
                             SeatManager,
                             VisitorManager,
                             )
-
-
-GENDER_CHOICE = (
-    ('M', 'Masculino'),
-    ('F', 'Femenino'))
+from django.contrib.auth.models import User
+from django.db import models
+from django.db.models import Q
+from ubication.models import Location
 
 
 class CustomUser(models.Model):
-    """Usuario extendido del user de django
-
-    Atributos:
-    preferencial (bool): se usa para hacer descuentos a este usuario
+    """
+    Usuario extendido del user de django
     """
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     dni = models.CharField(max_length=30, unique=True)
@@ -30,6 +24,40 @@ class CustomUser(models.Model):
                                      self.user.last_name,
                                      self.dni)
 
+    @staticmethod
+    def has_read_permission(request):
+        group = request.user.groups.filter(Q(name="Developer") |
+                                           Q(name="Manager") |
+                                           Q(name="Security Boss"))
+        parameters = [parameter for parameter in request.path_info
+                      if parameter.isdigit()]
+        user_company = str(request.user.customuser.seathasuser.seat.company_id)
+        user_seat = str(request.user.customuser.seathasuser.seat_id)
+        if (group and user_company == parameters[0]
+                and user_seat == parameters[1]):
+            return True
+        return False
+
+    def has_object_read_permission(self, request):
+        return True
+
+    def has_object_write_permission(self, request):
+        return True
+
+    @staticmethod
+    def has_write_permission(request):
+        group = request.user.groups.filter(Q(name="Developer") |
+                                           Q(name="Manager") |
+                                           Q(name="Security Boss"))
+        parameters = [parameter for parameter in request.path_info
+                      if parameter.isdigit()]
+        user_company = str(request.user.customuser.seathasuser.seat.company_id)
+        user_seat = str(request.user.customuser.seathasuser.seat_id)
+        if (group and user_company == parameters[0]
+                and user_seat == parameters[1]):
+            return True
+        return False
+
 
 class Company(models.Model):
     """Almacena datos generales de una empresa.
@@ -40,6 +68,34 @@ class Company(models.Model):
     website = models.URLField(blank=True, null=True)
     enabled = models.BooleanField(default=True)
     objects = CompanyManager()
+
+    @staticmethod
+    def has_read_permission(request):
+        group = request.user.groups.filter(Q(name="Developer") |
+                                           Q(name="Manager"))
+        parameters = [parameter for parameter in request.path_info
+                      if parameter.isdigit()]
+        user_company = str(request.user.customuser.seathasuser.seat.company_id)
+        if group and user_company == parameters[0]:
+            return True
+        return False
+
+    def has_object_read_permission(self, request):
+        return True
+
+    def has_object_write_permission(self, request):
+        return True
+
+    @staticmethod
+    def has_write_permission(request):
+        group = request.user.groups.filter(Q(name="Developer") |
+                                           Q(name="Manager"))
+        parameters = [parameter for parameter in request.path_info
+                      if parameter.isdigit()]
+        user_company = str(request.user.customuser.seathasuser.seat.company_id)
+        if group and user_company == parameters[0]:
+            return True
+        return False
 
     class Meta:
         verbose_name_plural = "Companies"
@@ -59,9 +115,42 @@ class Seat(models.Model):
     enabled = models.BooleanField(default=True)
     users = models.ManyToManyField(CustomUser,
                                    through='SeatHasUser',
-                                   through_fields=('seat',
-                                                   'user'))
+                                   through_fields=('seat', 'user'))
     objects = SeatManager()
+
+    @staticmethod
+    def has_read_permission(request):
+        group = request.user.groups.filter(Q(name="Developer") |
+                                           Q(name="Manager") |
+                                           Q(name="Security Boss"))
+        parameters = [parameter for parameter in request.path_info
+                      if parameter.isdigit()]
+        user_company = str(request.user.customuser.seathasuser.seat.company_id)
+        user_seat = str(request.user.customuser.seathasuser.seat_id)
+        if (group and user_company == parameters[0]
+                and user_seat == parameters[1]):
+            return True
+        return False
+
+    def has_object_read_permission(self, request):
+        return True
+
+    def has_object_write_permission(self, request):
+        return True
+
+    @staticmethod
+    def has_write_permission(request):
+        group = request.user.groups.filter(Q(name="Developer") |
+                                           Q(name="Manager") |
+                                           Q(name="Security Boss"))
+        parameters = [parameter for parameter in request.path_info
+                      if parameter.isdigit()]
+        user_company = str(request.user.customuser.seathasuser.seat.company_id)
+        user_seat = str(request.user.customuser.seathasuser.seat_id)
+        if (group and user_company == parameters[0]
+                and user_seat == parameters[1]):
+            return True
+        return False
 
     def __str__(self):
         return self.name
@@ -84,7 +173,8 @@ class SeatHasUser(models.Model):
 
 
 class Visitor(models.Model):
-    """Persona que visita la sede de la compañia y trae consigo un
+    """
+    Persona que visita la sede de la compañia y trae consigo un
     objeto que se registra
     """
     first_name = models.CharField(max_length=50)
@@ -93,6 +183,31 @@ class Visitor(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     enabled = models.BooleanField(default=True)
     objects = VisitorManager()
+
+    def has_read_permission(request):
+        group_limit = request.user.groups.filter(Q(name="Visitor"))
+        parameters = [parameter for parameter in request.path_info
+                      if parameter.isdigit()]
+        user_company = str(request.user.customuser.seathasuser.seat.company_id)
+        if not group_limit and user_company == parameters[0]:
+            return True
+        return False
+
+    def has_object_read_permission(self, request):
+        return True
+
+    def has_object_write_permission(self, request):
+        return True
+
+    @staticmethod
+    def has_write_permission(request):
+        group_limit = request.user.groups.filter(Q(name="Visitor"))
+        parameters = [parameter for parameter in request.path_info
+                      if parameter.isdigit()]
+        user_company = str(request.user.customuser.seathasuser.seat.company_id)
+        if not group_limit and user_company == parameters[0]:
+            return True
+        return False
 
     def __str__(self):
         return '{0}: {1} {2}'.format(self.first_name,

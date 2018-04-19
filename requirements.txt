@@ -30,3 +30,4 @@ django-filter==1.1.0
 sqlparse==0.2.4
 uritemplate==3.0.0
 urllib3==1.22
+dry-rest-permissions==0.1.10

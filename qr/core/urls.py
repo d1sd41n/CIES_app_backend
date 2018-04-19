@@ -13,8 +13,8 @@ user_router = routers.NestedSimpleRouter(seat_router,
                                          lookup='seat')
 user_router.register(r'users', views.SeatUserViewSet, base_name='seat-user')
 visitor_router = routers.NestedSimpleRouter(router,
-                                         r'companies',
-                                         lookup='company')
+                                            r'companies',
+                                            lookup='company')
 visitor_router.register(r'visitors', views.CompanyVisitor, base_name='company-visitor')
 
 urlpatterns = [

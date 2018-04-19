@@ -34,7 +34,6 @@ Seat_Check_router.register(r'check', views.CheckInViewSet, base_name='check-seat
 
 urlpatterns = [
     url(r'^', include(type_Item_router.urls)),
-    url(r'^', include(type_Item_router.urls)),
     url(r'^', include(item_router.urls)),
     url(r'^', include(brand_router.urls)),
     url(r'^', include(Seat_Check_router.urls)),

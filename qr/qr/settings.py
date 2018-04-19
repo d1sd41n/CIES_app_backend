@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 import os
 import raven
 ###################################################################################
-##### Raven esta desactivado temporalmente mientras se desarrolla el software####
+# #### Raven esta desactivado temporalmente mientras se desarrolla el software####
 #################################################################################
 # from raven.contrib.django.raven_compat.models import client
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -21,9 +21,9 @@ import raven
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 ########################################################
-######### Raven #################################
-########################################################
-#Raven configuration for Sentry logs
+# ######## Raven #################################
+# #######################################################
+# Raven configuration for Sentry logs
 # RAVEN_CONFIG = {
 #     'dsn': 'https://e4b4318b6d44401d9aa0f7613cf4139c:f2bd554a05fd45c982c44ce264819ab2@sentry.io/297344',
 #     'release': raven.fetch_git_sha(os.path.abspath(os.pardir)),
@@ -72,7 +72,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 #         },
 #     },
 # }
-#--------------------------------------------------------------
+# --------------------------------------------------------------
 ###########################################################################
 
 
@@ -107,6 +107,7 @@ INSTALLED_APPS = [
     'disabled',
     # third party
     'rest_framework',
+    'dry_rest_permissions',
     'corsheaders',
 ]
 
@@ -149,7 +150,7 @@ WSGI_APPLICATION = 'qr.wsgi.application'
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
 ####################################################
-##esta configuracuon es para el desarrollo#########
+# #esta configuracuon es para el desarrollo#########
 ###################################################
 DATABASES = {
     'default': {
@@ -158,7 +159,7 @@ DATABASES = {
     }
 }
 ################################################################
-#####esta configuracion es para usar postgre sin docker##########
+# ####esta configuracion es para usar postgre sin docker##########
 ##################################################################
 # DATABASES = {
 #     'default': {

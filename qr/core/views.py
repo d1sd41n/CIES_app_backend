@@ -6,6 +6,8 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404, get_list_or_404
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import User
+from django.contrib.auth.models import Group
+from dry_rest_permissions.generics import DRYPermissions
 from rest_framework import status
 from ubication.models import Location
 
@@ -33,24 +35,29 @@ from core.serializers import (
     VisitorSerializer,
 )
 
+
 class auxViewSet(viewsets.ViewSet):
-    """esta view es para los endpoints vacios que se usan para generar jerarquias,
+    """Esta view es para los EndPoints vacíos
+    que se usan para generar jerarquías,
     como items/company o items/compani/id/seats,
     aqui no se mostrará absolutamente nada"""
     queryset = Company.objects.all()
     serializer_class = CompanySerializerList
 
+
 class CompanyViewSet(viewsets.ModelViewSet):
     """
     Ejemplo URL:  http://localhost:8000/core/companies
-    Si se esta en el list:
-    Este end point lista todas las compañias en la bd
-    se puede filtrar por nombre y nit de la compañia
-     /?search=(parametro)
 
-    Si se esta en el retrieve:
-    desde aqui se edita la informacion y se elimina la compañia
-     espesifica"""
+    Si se consultan todas las compañías:
+    El EndPoint listará todas las compañias en la BD,
+    se puede filtrar por nombre y nit de la compañía de la siguiente forma
+     '/?search=(parámetro)'
+
+    Si se consulta una compañía en específico:
+    desde aquí se edita la información y se elimina la compañía
+    específica"""
+    permission_classes = (DRYPermissions,)
     queryset = Company.objects.all().order_by(Lower('name'))
     serializer_class = CompanySerializerList
     filter_backends = [SearchFilter, OrderingFilter]
@@ -71,8 +78,6 @@ class CompanyViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def retrieve(self, request, pk):
-        """desde aqui se edita la informacion y se elimina la compañia
-        espesifica"""
         r_queryset = get_object_or_404(
                     Company,
                     id=pk,
@@ -85,21 +90,19 @@ class CompanyViewSet(viewsets.ModelViewSet):
 class SeatViewSet(viewsets.ModelViewSet):
     """
     Ejemplo URL: http://localhost:8000/core/companies/1/seats
+
     -List: Lista todas las sedes de la compañia,
     cuando se hace un post para crear una sede no se debe especificar
     la compañia, el post automaticamente agrega la compañia en la cual se
     esta creando la sede.
     El address de la sede se agrega en otro endpoint.
-    Se filtra por el campo name  /?search=(name).
-    al hacer post se debe espesificar el id de la compañia de la sede
-    en el JSON en el campo company.
+    Para filtrar por el campo name  /?search=(name).
     -Detail: muestra los detalles de una sede, permite editarla y eliminarla,
-
-
     """
 
     queryset = Seat.objects.all().order_by(Lower('name'))
     serializer_class = SeatSerializerList
+    permission_classes = (DRYPermissions,)
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ['name']
 
@@ -134,7 +137,7 @@ class SeatViewSet(viewsets.ModelViewSet):
 class SeatUserViewSet(viewsets.ModelViewSet):
     """
     Ejemplo URL:  http://localhost:8000/core/companies/1/seats/1/users
-    LIst:
+    List:
     Este endpoint lista todos los usuarios de la sede.
     Solo lista el modelo User, no lista los datos de CustomUser,
     Sin embargo el metodo post de este endpoint llena ambos modelos
@@ -142,39 +145,28 @@ class SeatUserViewSet(viewsets.ModelViewSet):
 
     Para hacer el post correctamente se deben incluir los datos tanto de User
     como CustomUser en el mismo JSON, ejemplo:
-    <pre>
+
     {
-    "is_superuser": false,
-    "username": "BenitoKamelas",
-    "first_name": "Benito",
-    "last_name": "Kamelas",
-    "email": "tukulito@dds.com",
-    "is_staff": false,
-    "is_active": false,
-    "password": "ssdjdjd3333",
-    "gender": "M",
-    "nit": "666",
-    "dni": "666"
+    "is_superuser": true/false,  # true si es un super usuario, false si no
+    "username": "Test_username",  # Nombre de usuario, como una string
+    "first_name": "test_name",  # Primer nombre del usuario, como una string
+    "last_name": "test_lastname",  # Apellido del usuario, como una string
+    "email": "testemail@testserver.test",  # E-mail del usuario
+    "is_staff": true/false,  # true si el usuario es staff, false si no
+    "is_active": true/false,  # true si el usuario está activo, false  si no
+    "password": "testpassword",  # La contraseña del usuario, como una string
+    "dni": "test_dni"  # El número de identidad del usuario, como una string
     }
-    </pre>
 
     Para filtrar ser usa ?search=(contenido), se puede buscar por
-    dni, nombre de usario y correo, fisrt_name, last_name.
-    <pre>
-    ATENCION!
-    #########################################################
-    ESTE ENDPOINT ESTA INCOMPLETO
-
-
-    Faltan permisos, peuden haber fallas de seguridad
-    #########################################################
-
+    DNI, nombre de usario, correo, nombre o apellido.
 
     para ver los datos del customUser ir al siguiente endpoint:
 
     http://localhost:8000/core/companies/id/seats/id/users/id/custom/
-    </pre>"""
+    """
     queryset = User.objects.all().order_by(Lower('username'))
+    permission_classes = (DRYPermissions,)
     serializer_class = UserSerializerList
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ['username', 'email', 'dni']
@@ -230,7 +222,7 @@ class SeatUserViewSet(viewsets.ModelViewSet):
 class SeatCustomUserDetail(generics.RetrieveUpdateDestroyAPIView):
     """Muestra los datos de customUser de determinado usuario,
     tambien desde aqui se puede editar."""
-
+    permission_classes = (DRYPermissions,)
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
 
@@ -273,15 +265,20 @@ class SeatCustomUserDetail(generics.RetrieveUpdateDestroyAPIView):
 
 class SeatAddress(generics.RetrieveUpdateDestroyAPIView,
                   generics.CreateAPIView):
-    """En esta Api se inserta, consulta, edita, elimina la direccion de determinada sede de la compañia,
-    como al crearse la sede no se crea una address entonces este campo viene vasio y por tanto se debe llenar
-    por aquí, si ya existe un adress y se vuelve a insertar otro, este nuevo reemplaza la address anterior sin
-    eliminarla de la BD
+    """En esta Api se inserta, consulta, edita y elimina la
+    dirección de determinada sede de la compañía,
+    al crearse la sede no se crea una address por lo cual este campo
+    queda vacío y se debe llenar por este EndPoint,
+    si ya existe una dirección y se vuelve a insertar otra,
+    esta nueva reemplazará la anterior sin eliminarla de la BD.
 
-    Aqui en el metodo get no hacemos la consulta directa a Locations para permitirnos mostrar dos mensajes diferentes,
-    uno en caso que la jerarquia este incorrecta y otro en caso de que la sede aun no tenga direccion
+    En el metodo GET no se realiza una consulta directa a Locations para
+    permitir mostrar dos mensajes diferentes, uno en caso que la jerarquía
+    este incorrecta y otro en caso de que la sede aún no tenga dirección.
 
-    Al hacer post se debe mandar el id de la ciudad en la cual va a estar la direccion ejemplo  "city": 1"""
+    Al hacer post se debe mandar el Id de la ciudad en la cual va a
+    estar la dirección ejemplo  "city": 1"""
+    permission_classes = (DRYPermissions,)
     queryset = Location.objects.all()
     serializer_class = AddressSerializer
 
@@ -292,7 +289,8 @@ class SeatAddress(generics.RetrieveUpdateDestroyAPIView,
                     company=company_pk
                     ).address
         if(queryset is None):
-            return Response({'address': 'This seat does not have address :('}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'address': 'This seat does not have address :('},
+                            status=status.HTTP_404_NOT_FOUND)
         serializer = AddressSerializer(queryset)
         return Response(serializer.data)
 
@@ -345,28 +343,25 @@ class SeatAddress(generics.RetrieveUpdateDestroyAPIView,
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-
 class CompanyVisitor(viewsets.ModelViewSet):
     """
-    En este endpint se lsitan y se registran los visitantes
-    de la compañia que registran sus items.
+    En este EndPoint se listan y registran los visitantes
+    de la compañia que han registrado objetos.
 
 
     La forma de registrar un visitante se hace con el siguiente JSON
 
-
     {
-    "first_name": "umberto hannibal",
-    "last_name": "Castrillon",
-    "gender": "M",
-    "dni": "5457767",
-    "enabled": true
+    "first_name": "Test_name",  # Primer nombre, como una string
+    "last_name": "Test_lastname",  # Segundo nombre, como una string
+    "dni": "Test_dni",  # Número de identidad, como una string
+    "enabled": true/false  # true si está habilitado, false si no
     }
 
-    La compañia se añade automaticamente en la view
-
+    La compañía se añade automaticamente en la view
     """
 
+    permission_classes = (DRYPermissions,)
     queryset = Visitor.objects.all().order_by(Lower('last_name'))
     serializer_class = VisitorSerializer
     filter_backends = [SearchFilter]

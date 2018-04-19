@@ -3,61 +3,53 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from django.db.models.functions import Lower
 from django.db.models import Q
-from django.shortcuts import get_object_or_404, get_list_or_404
-from django.contrib.contenttypes.models import ContentType
-from django.contrib.auth.models import User
+from django.shortcuts import get_object_or_404
 from rest_framework import status
-from rest_framework.views import APIView
-from ubication.models import Location
+from dry_rest_permissions.generics import DRYPermissions
 from core.models import Seat
-from django.db.models import F, ExpressionWrapper
+from django.db.models import F
 from rest_framework.filters import (
     SearchFilter,
 )
-
-
 from items.models import (
     TypeItem,
     Brand,
     Item,
     LostItem,
-    Checkin,
-    LostItem,
+    CheckIn,
 )
-
 from items.serializers import (
     ItemSerializer,
     ChekinSerializer,
     TypeItemSerializer,
-    Branderializer,
+    BrandSerializer,
     RegisterItem,
-    ChekinCreateSerializer,
     LostItemCreateSerializer,
     LostItemSerializer,
+    CheckInCreateSerializer,
 )
-class CheckInViewSet(viewsets.ModelViewSet):
-    """"en este endpoint se registra la entrada de salida de ItemSerializer
-        en la sede
 
-        Ejemplo de JSON:
+
+class CheckInViewSet(viewsets.ModelViewSet):
+    """En este EndPoint se registra la entrada y salida del objeto a la sede
+
+        El siguiente es el formato de JSON a usar:
 
         {
-        "go_in": false,
-        "item": 1,
-        "seat": 1,
-        "worker": 3
+        "go_in": true/false,  # true si ingresa, false si sale
+        "item": pk_item,  # Id del objeto que ingresa
+        "seat": pk_seat,  # Id de la sede donde se realiza el último ingreso
+        "worker": pk_worker  # Id del empleado que realiza el ingreso/ la salida
         }
 
-        se debe introducir el un booleano true si va de entrada y false si es de salida
-        la id de la sede, id del item e id del trabajador que lo escanea.
-
     #####################################################
-    este endpoint esta en construccion
+    Este endpoint esta en construcción
 
-    Faltan permisos, filtros y otros detalles de seguridad
+    Faltan filtros y otros detalles de seguridad
     #####################################################"""
-    queryset = Checkin.objects.all()
-    serializer_class = ChekinCreateSerializer
+    permission_classes = (DRYPermissions,)
+    queryset = CheckIn.objects.all()
+    serializer_class = CheckInCreateSerializer
 
     def create(self, request, company_pk, seat_pk):
         data = request.data
@@ -67,7 +59,7 @@ class CheckInViewSet(viewsets.ModelViewSet):
         #             company=company_pk,
         #             enabled=True
         #             )
-        serializer = ChekinCreateSerializer(data=data)
+        serializer = CheckInCreateSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -83,8 +75,7 @@ class CheckInViewSet(viewsets.ModelViewSet):
         return checks
 
     def list(self, request, company_pk, seat_pk):
-        print("dfwfefgefhehef")
-        checks = Checkin.objects.filter(seat__company__id=company_pk, seat__id=seat_pk)
+        checks = CheckIn.objects.filter(seat__company__id=company_pk, seat__id=seat_pk)
         # query = self.request.GET.get("last_name")
         # if query:
         #     queryset_list = queryset_list.filter(
@@ -97,7 +88,7 @@ class CheckInViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def retrieve(self, request, company_pk, seat_pk, pk):
-        checks = Checkin.objects.filter(seat__company__id=company_pk, seat__id=seat_pk, id=pk)
+        checks = CheckIn.objects.filter(seat__company__id=company_pk, seat__id=seat_pk, id=pk)
         if (not len(checks)):
             return Response(status=status.HTTP_404_NOT_FOUND)
         checks = self.queryAnnotate(checks)
@@ -105,43 +96,32 @@ class CheckInViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-
 class RegisterItemViewSet(generics.CreateAPIView):
-    """"en este endpoint se registran los item,
+    """En este endpoint se registran los item.
 
-    Solo el item como tal, la marca y el tipo de item se hace en otros
-    endpoint.   Tambien la consulta de todos los teims existentes.
+    Se insertan datos específicos del objeto, exceptuando
+    el tipo de objeto y su marca.
 
     Para registrar se debe enviar un JSON con el siguiente formato:
 
-    Ejemplo de JSON:
-
-    <pre>
     {
-    "reference": "sqd",
-    "color": "rojo",
-    "description": "grande sucio y feo",
-    "lost": false,
-    "enabled": false,
-    "registration_date": "2018-03-20",
-    "type_item": 1,
-    "code": "44c5868b-b27a-4ca7-809c-ca1c1c42f1be",
-    "owner": 1,
-    "brand": 1,
-    "seatRegistration": 1,
-    "registeredBy": 3
+    "reference": "test_reference",  # Referencia del objeto como una string
+    "color": "test_color",  # Color del objeto como una string
+    "description": "test_description",  # Descripción del objeto como una string
+    "lost": true/false, # true si el objeto está perdido, false si no
+    "enabled": true/false, # true si el objeto está habilitado, false si no
+    "registration_date": "yyyy-mm-dd",  # Fecha del registro default=timezone.now()
+    "type_item": pk_type_item,  # Id del tipo de objeto
+    "code": "44c5868b-b27a-4ca7-809c-ca1c1c42f1be", # Hash relacionado al código QR
+    "owner": pk_owner,  # Id del dueño del objeto
+    "brand": pk_brand,  # Id de la marca del objeto
+    "seat_registration": pk_seat, # Id de la sede donde se registró el objeto
+    "registered_by": pk_worker  # Id del empleado que registró el objeto
     }
-    </pre>
-
-    los campos owner, brand, seatRegistration, registeredBy, type_item
-
-    llevan las id del dueño del producto, la marca , la sede, el empleado que lo registrados
-    y el tipo de item.
-
     """
 
+    permission_classes = (DRYPermissions,)
     serializer_class = RegisterItem
-
 
     def post(self, request, company_pk, seat_pk):
         data = request.data
@@ -160,30 +140,21 @@ class RegisterItemViewSet(generics.CreateAPIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-
-
-
 class ItemViewSet(viewsets.ReadOnlyModelViewSet):
     """"
-    En este endpoint se pueden ver todos los items registrados
-    en una compañia, junto a todos sus detalles, como dueño,
-    dni del dueño, la sede en que se registro, el empleado que lo registro,
-    entre otros...
+    En este EndPoint se pueden ver todos los items registrados
+    en una compañía con todos sus detalles, como dueño,
+    DNI del dueño, la sede en que se registró, el empleado que lo registró...
 
-    Este enpoint solo es de lectura, por el cualaqui no se registran items,
-    eso se ahce en la siguiente ruta:
+    Este EndPoint es de sólo lectura,
+    para registrar items ir a la siguiente ruta:
 
     (http://localhost:8000/items/companies/id/seats/id/registeritem/)
 
-    Se puede Buscar por medio de el dni de el dueño:
-    (http://localhost:8000/items/companies/1/items/?search=[dni de el sueño])
-    sin los []
+    Se puede buscar por medio del DNI del dueño:
+    (http://localhost:8000/items/companies/1/items/?search=owner__dni)"""
 
-    #####################################################
-    este endpoint esta en construccion
-
-    Faltan permisos
-    #####################################################"""
+    permission_classes = (DRYPermissions,)
     queryset = Item.objects.all()
     serializer_class = ItemSerializer
     filter_backends = [SearchFilter]
@@ -221,14 +192,17 @@ class ItemViewSet(viewsets.ReadOnlyModelViewSet):
 
 class CompanyTypeItem(viewsets.ModelViewSet):
     """
+    En este EndPoint se crean los tipos de objetos que ingresan a la compañía
 
+    El siguiente es el formato JSON a usar:
 
     {
-    "kind": "carro"
+    "kind": "test_kind"  # Nombre del tipo de objeto a crear
+    "enabled": true/false  # true si está habilitado, false si no
+    "company": pk_company  # Id de la compañía
     }
-
     """
-
+    permission_classes = (DRYPermissions,)
     queryset = TypeItem.objects.all().order_by(Lower('kind'))
     serializer_class = TypeItemSerializer
     # filter_backends = [SearchFilter, OrderingFilter]
@@ -270,17 +244,22 @@ class CompanyTypeItem(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-
 class BrandItem(viewsets.ModelViewSet):
     """
+    En este EndPoint se crean las marcas de los objetos de cada compañía
+
+    El siguiente es el formato JSON a usar:
+
     {
-    "kind": "carro"
+    "brand": "test_brand"  # Marca del objeto como una string
+    "enabled": true/false  # true si está habilitado, false si no
+    "type_item": pk_type_item  # Id del tipo de item
     }
 
     """
-
+    permission_classes = (DRYPermissions,)
     queryset = Brand.objects.all().order_by(Lower('brand'))
-    serializer_class = Branderializer
+    serializer_class = BrandSerializer
     # filter_backends = [SearchFilter, OrderingFilter]
     # search_fields = ['name']
 
@@ -297,9 +276,9 @@ class BrandItem(viewsets.ModelViewSet):
         #     queryset_list = queryset_list.filter(
         #                 Q(name__icontains=query)
         #                 ).distinct()
-            # serializer = VisitorSerializer(queryset_list, many=True)
-            # return Response(serializer.data)
-        serializer = Branderializer(queryset_list, many=True)
+        # serializer = VisitorSerializer(queryset_list, many=True)
+        # return Response(serializer.data)
+        serializer = BrandSerializer(queryset_list, many=True)
         return Response(serializer.data)
 
     def retrieve(self, request, pk, company_pk, typeitem_pk):
@@ -310,7 +289,7 @@ class BrandItem(viewsets.ModelViewSet):
                     type_item=typeitem_pk,
                     enabled=True
                     )
-        serializer = Branderializer(r_queryset)
+        serializer = BrandSerializer(r_queryset)
         return Response(serializer.data)
 
     def create(self, request, company_pk, typeitem_pk):
@@ -322,7 +301,7 @@ class BrandItem(viewsets.ModelViewSet):
                     )
         data = request.data.copy()
         data["type_item"] = typeitem_pk
-        serializer = Branderializer(data=data)
+        serializer = BrandSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)

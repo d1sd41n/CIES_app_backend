@@ -17,7 +17,8 @@ class CompanyManager(models.Manager):
         return self.create_company(data)
 
     def create_company(self, data):
-        company = self.create(enabled=data['enabled'], nit=data['nit'], email=data['email'], name=data['name'],
+        company = self.create(enabled=data['enabled'], nit=data['nit'],
+                              email=data['email'], name=data['name'],
                               website=data['website'])
         company.save()
         return company
@@ -49,7 +50,6 @@ class SeatManager(models.Manager):
 class UserManager(models.Manager):
     def mockup(self, api=False):
         selection = {1: True, 2: False}
-        gender_selection = {1: 'F', 2: 'M'}
         data = {'id': None, 'username': "usuario" + str(123),
                 'first_name': "Usuario" + str(randint(1, 9999)),
                 'last_name': "Apellido" + str(randint(1, 9999)),
@@ -60,14 +60,16 @@ class UserManager(models.Manager):
                 'preferencial': selection[randint(1, 2)],
                 'last_login': None,
                 'dni': randint(111111, 999999),
-                'email': "Usuario" + str(randint(1, 9999)) + "@" + "email" + ".com"}
+                'email': "Usuario" + str(randint(1, 9999)) +
+                         "@" + "email" + ".com"}
         if api:
             return data
         return self.create_user(data)
 
     def create_user(self, data):
         user = User.objects.create(username=data['first_name'] + str(123),
-                                   is_superuser=data['is_superuser'], is_staff=data['is_staff'],
+                                   is_superuser=data['is_superuser'],
+                                   is_staff=data['is_staff'],
                                    is_active=data['is_active'],
                                    first_name=data['first_name'],
                                    last_name=data['last_name'],
@@ -84,10 +86,7 @@ class UserManager(models.Manager):
 
 class CustomUserManager(models.Manager):
     def mockup(self, api=False):
-        selection = {1: 'F', 2: 'M'}
-        preferencial = {1: True, 2: False}
-        data = {'id': None, 'gender': selection[randint(1, 2)],
-                'nit': randint(111111, 999999),
+        data = {'id': None,
                 'dni': randint(11111, 99999)}
         if api:
             return data
@@ -98,31 +97,28 @@ class CustomUserManager(models.Manager):
     def create_custom_user(self, data):
         custom_user = self.create(user=data['user'],
                                   dni=data['dni'])
-        # enterprise.models.CustomUserHasPhone.objects.create(user=custom_user,
-        #                                                     phone=enterprise.models.Phone.objects.mockup())
         custom_user.save()
         return custom_user
-
 
 
 class VisitorManager(models.Manager):
     def mockup(self, api=False):
         selection = {1: True, 2: False}
-        gender_selection = {1: 'F', 2: 'M'}
         data = {'id': None,
                 'first_name': "visitante" + str(randint(1, 9999)),
                 'last_name': "Apellido" + str(randint(1, 9999)),
                 'is_active': selection[randint(1, 2)],
                 'dni': randint(111111, 999999),
-                'company': core.models.Company.objects.mockup(),}
+                'company': core.models.Company.objects.mockup()}
         if api:
             return data
         return self.create_visitor(data)
 
     def create_visitor(self, data):
-        visitor = core.models.Visitor.objects.create(first_name=data['first_name'],
-                                   last_name=data['last_name'],
-                                   dni=data['dni'],
-                                   company=data['company'],)
+        visitor = core.models.Visitor.objects.create(
+                                                 first_name=data['first_name'],
+                                                 last_name=data['last_name'],
+                                                 dni=data['dni'],
+                                                 company=data['company'],)
         visitor.save()
         return visitor
