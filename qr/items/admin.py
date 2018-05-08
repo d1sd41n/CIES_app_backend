@@ -3,7 +3,7 @@ from items.models import (Brand,
                           TypeItem,
                           Item,
                           LostItem,
-                          Checkin,
+                          CheckIn,
                           )
 
 
@@ -11,4 +11,4 @@ admin.site.register(Brand)
 admin.site.register(TypeItem)
 admin.site.register(Item)
 admin.site.register(LostItem)
-admin.site.register(Checkin)
+admin.site.register(CheckIn)

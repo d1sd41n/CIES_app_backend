@@ -7,10 +7,12 @@ MANIFEST
 dist/
 docs/_build/
 docs/locale/
+static/
 node_modules/
 tests/coverage_html/
 tests/.coverage
 build/
+.ropeproject/
 tests/report/
 
 # Sensitive Data

@@ -114,9 +114,8 @@ class CustomUserSerializer(serializers.ModelSerializer):
         model = CustomUser
         fields = (
             'id',
-            'preferencial',
-            'nit',
             'dni',
+            'enabled',
         )
 
 

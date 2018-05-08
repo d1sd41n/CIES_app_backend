@@ -3,6 +3,7 @@ from django.db.models.functions import Lower
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 from rest_framework.filters import SearchFilter
+from dry_rest_permissions.generics import DRYPermissions
 from rest_framework.response import Response
 from ubication.models import Country, Region, City
 
@@ -22,9 +23,9 @@ class CountryViewSet(viewsets.ModelViewSet):
     Filtra por name y postalcode
 
     retrieve:
-    retorna un pais con id especifico
+    Retorna un país con id específico
     """
-
+    permission_classes = (DRYPermissions,)
     queryset = Country.objects.all().order_by(Lower('name'))
     serializer_class = CountrySerializerList
     filter_backends = [SearchFilter]
@@ -39,11 +40,12 @@ class CountryViewSet(viewsets.ModelViewSet):
 class RegionViewSet(viewsets.ModelViewSet):
     """
     list:
-    filtra por name
+    Filtra por name
 
     retrieve:
-    retorna una region con id especifico
+    Retorna una región con id específico
     """
+    permission_classes = (DRYPermissions,)
     queryset = Region.objects.all()
     serializer_class = RegionSerializerList
     filter_backends = [SearchFilter]
@@ -69,11 +71,12 @@ class RegionViewSet(viewsets.ModelViewSet):
 class CityViewSet(viewsets.ModelViewSet):
     """
     list:
-    filtra por name
+    Filtra por name
 
     retrieve:
-    retorna una ciudad con id especifico
+    Retorna una ciudad con id específico
     """
+    permission_classes = (DRYPermissions,)
     queryset = City.objects.all()
     serializer_class = CitySerializerList
     filter_backends = [SearchFilter]

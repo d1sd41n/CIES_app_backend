@@ -1,9 +1,8 @@
 from rest_framework.response import Response
 from codes.serializers import CodesSerializer
 from codes.models import Code
-from rest_framework.views import APIView
-from django.shortcuts import get_object_or_404
 import qrcode
+from dry_rest_permissions.generics import DRYPermissions
 from rest_framework import status
 from io import BytesIO
 from items.models import Item
@@ -17,6 +16,7 @@ from rest_framework.filters import (
     SearchFilter,
 )
 
+
 class CompanyCodes(viewsets.ReadOnlyModelViewSet):
     """"
     Aqui se muestran todos los codes de una compañia,
@@ -26,6 +26,7 @@ class CompanyCodes(viewsets.ReadOnlyModelViewSet):
     desde los codes de la sede.
 
     Se filtra por id de la sede"""
+    permission_classes = (DRYPermissions,)
     queryset = Code.objects.all()
     serializer_class = CodesSerializer
 
@@ -44,7 +45,8 @@ class CompanyCodes(viewsets.ReadOnlyModelViewSet):
                             Q(seat=query)
                             ).distinct()
             else:
-                return Response({"error": "solo ids"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": "solo ids"},
+                                status=status.HTTP_400_BAD_REQUEST)
         serializer = CodesSerializer(queryset_list, many=True)
         return Response(serializer.data)
 
@@ -61,11 +63,8 @@ def generate_qr(request, company_pk, seat_pk):
         pages = int(request.POST['pages'])
         response = HttpResponse(content_type='application/pdf')
         response['Content-Disposition'] = 'filename="somefilename.pdf"'
-
         buffer = BytesIO()
-
         p = canvas.Canvas(buffer, pagesize=A4)
-
         for page in range(pages):
             for cols in range(13):
                 for rows in range(18):
@@ -80,9 +79,7 @@ def generate_qr(request, company_pk, seat_pk):
                                       width=50,
                                       height=50)
             p.showPage()
-
         p.save()
-
         pdf = buffer.getvalue()
         buffer.close()
         response.write(pdf)
