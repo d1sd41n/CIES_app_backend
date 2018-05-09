@@ -13,7 +13,7 @@ from django.utils import timezone
 
 
 class TypeItem(models.Model):
-    kind = models.CharField(max_length=30)
+    kind = models.CharField(max_length=30, unique=True)
     company = models.ForeignKey(Company, on_delete=models.CASCADE,
                                 null=True)
     enabled = models.BooleanField(default=True)
@@ -52,7 +52,7 @@ class TypeItem(models.Model):
 
 
 class Brand(models.Model):
-    brand = models.CharField(max_length=30)
+    brand = models.CharField(max_length=30, unique=True)
     type_item = models.ForeignKey(TypeItem, on_delete=models.CASCADE,
                                   null=True, blank=True)
     enabled = models.BooleanField(default=True)
@@ -113,7 +113,7 @@ class Item(models.Model):
     enabled = models.BooleanField(default=True)
     seat_registration = models.ForeignKey(Seat, on_delete=models.CASCADE,
                                           null=True)
-    registration_date = models.DateTimeField(default=timezone.now, null=True)
+    registration_date = models.DateTimeField(auto_now_add=True, blank=True)
     registered_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
     objects = ItemManager()
 
@@ -123,9 +123,7 @@ class Item(models.Model):
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
         user_company = str(request.user.customuser.seathasuser.seat.company_id)
-        user_seat = str(request.user.customuser.seathasuser.seat_id)
-        if (not group_limit and user_company == parameters[0] and
-                user_seat == parameters[1]):
+        if (not group_limit and user_company == parameters[0]):
             return True
         return False
 
@@ -141,9 +139,7 @@ class Item(models.Model):
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
         user_company = str(request.user.customuser.seathasuser.seat.company_id)
-        user_seat = str(request.user.customuser.seathasuser.seat_id)
-        if (not group_limit and user_company == parameters[0] and
-                user_seat == parameters[1]):
+        if (not group_limit and user_company == parameters[0]):
             return True
         return False
 
@@ -156,10 +152,12 @@ class Item(models.Model):
 class LostItem(models.Model):
     item = models.OneToOneField(Item, on_delete=models.CASCADE)
     description = models.CharField(max_length=255)
-    date = models.DateTimeField(null=False)
-    seat = models.ForeignKey(Seat, on_delete=models.CASCADE, null=True)
-    email = models.EmailField(blank=True, null=True)
-    visitor_phone = models.CharField(max_length=20, blank=True, null=True)
+    date = models.DateTimeField(auto_now=True, blank=True)
+    seat = models.ForeignKey(Seat, on_delete=models.CASCADE, blank=True,
+                             null=True)
+    email = models.EmailField(unique=True, blank=True, null=True)
+    visitor_phone = models.CharField(unique=True, max_length=20,
+                                     blank=True, null=True)
     closed_case = models.BooleanField(default=False)
     enabled = models.BooleanField(default=True)
     objects = LostItemManager()
@@ -221,8 +219,9 @@ class LostItem(models.Model):
 class CheckIn(models.Model):
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
     seat = models.ForeignKey(Seat, on_delete=models.CASCADE)
-    worker = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
-    date = models.DateTimeField(default=timezone.now, blank=False)
+    worker = models.ForeignKey(User, on_delete=models.CASCADE, null=True,
+                               blank=True)
+    date = models.DateTimeField(default=timezone.now, blank=True)
     go_in = models.BooleanField()
     objects = CheckinManager()
 

@@ -311,22 +311,20 @@ class BrandItem(viewsets.ModelViewSet):
 
 class LostItemView(viewsets.ModelViewSet):
     """
-    endpoint de items perdidos,
-    este es el JSON con el que se registran items perdidos
+    En este endpoint se reigstran los item perdidos,
+    este es el JSON de ejemplo
     <pre>
     {
-    "description": "el tonto del culo dejo el portatil en una mesa sola y alguien se lo agarro sin que se diera nicuenta",
-    "date": "2018-03-01T18:11:12.425748-05:20",
-    "email": "tocameernesto@gmail.com",
-    "visitor_phone": "123456",
-    "item": 2,
-    "seat": 1
+    "description": "test_description",  # Descripción del objeto perdido, como una string
+    "date": "aa-mm-dd hh:mm:ss.ff",  # Fecha en que se perdió el objeto, DateTimeField por default la actual
+    "email": "test_email@testserver.test",  # Email del dueño del objeto, como una string
+    "visitor_phone": "test_phone",  # Teléfono del dueño del objeto, como un int
+    "item": test_pk,  # Clave primaria del objeto
+    "seat": test_pk  # Clave primaria de la sede donde sucedió la pérdida
     }
     </pre>
 
-    en el campo item y seats van las id de los correspondientes.
-
-    Faltan filtros y permisos
+    Faltan filtros
     """
 
 

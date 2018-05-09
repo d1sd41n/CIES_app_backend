@@ -19,9 +19,10 @@ class Disabled(models.Model):
     el campo queda vacío"""
     action = models.NullBooleanField(choices=((True, "Enable"),
                                               (False, "Disable")), default=True)
-    cause = models.CharField(max_length=300, null=True, blank=True)
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True)
-    date = models.DateField(default=datetime.date.today())
+    cause = models.CharField(max_length=300, blank=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True,
+                                blank=True)
+    date = models.DateField(auto_now=True, blank=True)
     fk_object = models.PositiveIntegerField()
     model = models.CharField(max_length=13, choices=MODEL_CHOICE)
     objects = DisabledManager()

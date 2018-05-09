@@ -63,9 +63,9 @@ class Company(models.Model):
     """Almacena datos generales de una empresa.
     """
     nit = models.CharField(max_length=15, unique=True)
-    email = models.EmailField(blank=True, null=True)
-    name = models.CharField(max_length=100)
-    website = models.URLField(blank=True, null=True)
+    email = models.EmailField(unique=True, blank=True, null=True)
+    name = models.CharField(max_length=100, unique=True)
+    website = models.URLField(unique=True, blank=True, null=True)
     enabled = models.BooleanField(default=True)
     objects = CompanyManager()
 
@@ -110,8 +110,8 @@ class Seat(models.Model):
     address = models.OneToOneField(Location, on_delete=models.CASCADE,
                                    blank=True, null=True)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    email = models.EmailField(blank=True, null=True)
-    name = models.CharField(max_length=100)
+    email = models.EmailField(blank=True)
+    name = models.CharField(max_length=100, unique=True)
     enabled = models.BooleanField(default=True)
     users = models.ManyToManyField(CustomUser,
                                    through='SeatHasUser',
