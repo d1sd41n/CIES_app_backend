@@ -6,8 +6,9 @@ from django.db.models import Q
 
 class Country(models.Model):
     """se almacena el pais de ubicacion"""
-    name = models.CharField(max_length=50)
-    postalcode = models.CharField(max_length=3, null=True, blank=True)
+    name = models.CharField(max_length=50, unique=True)
+    postalcode = models.CharField(unique=True, max_length=3,
+                                  null=True, blank=True)
     objects = CountryManager()
 
     @staticmethod
@@ -40,7 +41,7 @@ class Country(models.Model):
 class Region(models.Model):
     """Se almacena el estado, departamento o region
     """
-    name = models.CharField(max_length=50)
+    name = models.CharField(unique=True, max_length=50)
     country = models.ForeignKey(Country, on_delete=models.CASCADE)
     objects = RegionManager()
 
@@ -71,7 +72,7 @@ class Region(models.Model):
 class City(models.Model):
     """Se almacena ciudades o municipios
     """
-    name = models.CharField(max_length=50)
+    name = models.CharField(unique=True, max_length=50)
     region = models.ForeignKey(Region, on_delete=models.CASCADE)
     objects = CityManager()
 
@@ -105,9 +106,9 @@ class City(models.Model):
 class Location(models.Model):
     """Almacena la latitud y longitud de algun objeto
     """
-    address = models.CharField(max_length=100)
-    latitude = models.FloatField(null=True)
-    longitude = models.FloatField(null=True)
+    address = models.CharField(max_length=100, unique=True)
+    latitude = models.FloatField(unique=True, blank=True, null=True)
+    longitude = models.FloatField(unique=True, blank=True, null=True)
     city = models.ForeignKey(City, on_delete=models.CASCADE)
     objects = LocationManager()
 
