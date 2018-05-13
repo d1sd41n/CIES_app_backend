@@ -63,7 +63,7 @@ class Company(models.Model):
     """Almacena datos generales de una empresa.
     """
     nit = models.CharField(max_length=15, unique=True)
-    email = models.EmailField(unique=True, blank=True, null=True)
+    email = models.EmailField(unique=True)
     name = models.CharField(max_length=100, unique=True)
     website = models.URLField(unique=True, blank=True, null=True)
     enabled = models.BooleanField(default=True)

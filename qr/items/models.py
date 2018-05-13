@@ -14,7 +14,7 @@ from django.utils import timezone
 
 class TypeItem(models.Model):
     kind = models.CharField(max_length=30, unique=True)
-    company = models.ForeignKey(Company, on_delete=models.CASCADE,
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True,
                                 null=True)
     enabled = models.BooleanField(default=True)
     objects = TypeItemManager()
@@ -102,19 +102,19 @@ class Brand(models.Model):
 
 class Item(models.Model):
     type_item = models.ForeignKey(TypeItem, on_delete=models.CASCADE)
-    code = models.OneToOneField(Code, on_delete=models.CASCADE, null=True)
+    code = models.OneToOneField(Code, on_delete=models.CASCADE)
     owner = models.ForeignKey(Visitor, on_delete=models.CASCADE)
     brand = models.ForeignKey(Brand, on_delete=models.CASCADE,
                               null=True, blank=True)
     reference = models.CharField(max_length=30, blank=True)
     color = models.CharField(max_length=30, blank=True)
     description = models.CharField(max_length=255, blank=True)
-    lost = models.BooleanField(default=False)
+    lost = models.BooleanField()
     enabled = models.BooleanField(default=True)
-    seat_registration = models.ForeignKey(Seat, on_delete=models.CASCADE,
-                                          null=True)
+    seat_registration = models.ForeignKey(Seat, on_delete=models.CASCADE)
     registration_date = models.DateTimeField(auto_now_add=True, blank=True)
-    registered_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    registered_by = models.ForeignKey(User, on_delete=models.CASCADE,
+                                      blank=True, null=True)
     objects = ItemManager()
 
     @staticmethod
@@ -123,7 +123,7 @@ class Item(models.Model):
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
         user_company = str(request.user.customuser.seathasuser.seat.company_id)
-        if (not group_limit and user_company == parameters[0]):
+        if not group_limit and user_company == parameters[0]:
             return True
         return False
 
@@ -139,7 +139,7 @@ class Item(models.Model):
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
         user_company = str(request.user.customuser.seathasuser.seat.company_id)
-        if (not group_limit and user_company == parameters[0]):
+        if not group_limit and user_company == parameters[0]:
             return True
         return False
 

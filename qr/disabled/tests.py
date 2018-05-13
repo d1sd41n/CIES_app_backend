@@ -6,6 +6,6 @@ import disabled
 @tag('TestCreateDisabled')
 class TestCreateDisabled(APITestCase):
     def test_create_disabled(self):
-        disableds = disabled.models.Disabled.objects.mockup()
+        disabled_mockup = disabled.models.Disabled.objects.mockup()
         print("Disabled model test was correct")
-        return disableds
+        return disabled_mockup

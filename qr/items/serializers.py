@@ -30,40 +30,6 @@ class ItemSerializer(serializers.Serializer):
         model = Item
         fields = ('__all__')
 
-    @staticmethod
-    def has_read_permission(request):
-        group = request.user.groups.filter(Q(name="Developer") | Q(name="Manager"))
-        parameters = [parameter for parameter in request.path_info if parameter.isdigit()]
-        user_company_id = str(request.user.customuser.seathasuser.seat.company_id)
-        if group and user_company_id == parameters[0]:
-            return True
-        return False
-
-    def has_object_read_permission(self, request):
-        group = request.user.groups.filter(Q(name="Developer") | Q(name="Manager"))
-        parameters = [parameter for parameter in request.path_info if parameter.isdigit()]
-        user_company_id = str(request.user.customuser.seathasuser.seat.company_id)
-        if group and user_company_id == parameters[0]:
-            return True
-        return False
-
-    def has_object_write_permission(self, request):
-        group = request.user.groups.filter(Q(name="Developer") | Q(name="Manager"))
-        parameters = [parameter for parameter in request.path_info if parameter.isdigit()]
-        user_company_id = str(request.user.customuser.seathasuser.seat.company_id)
-        if group and user_company_id == parameters[0]:
-            return True
-        return False
-
-    @staticmethod
-    def has_write_permission(request):
-        group = request.user.groups.filter(Q(name="Developer") | Q(name="Manager"))
-        parameters = [parameter for parameter in request.path_info if parameter.isdigit()]
-        user_company_id = str(request.user.customuser.seathasuser.seat.company_id)
-        if group and user_company_id == parameters[0]:
-            return True
-        return False
-
 
 class ChekinSerializer(serializers.Serializer):
 
@@ -86,7 +52,6 @@ class CheckInCreateSerializer(serializers.ModelSerializer):
         model = CheckIn
         fields = ('__all__')
         extra_kwargs = {
-            'id': {'read_only': True},
             'date': {'read_only': True},
             }
 
@@ -110,6 +75,7 @@ class RegisterItem(serializers.ModelSerializer):
     class Meta:
         model = Item
         fields = ('__all__')
+        read_only_fields = ('registered_by', 'enabled')
 
 
 class RegisterItemTest(serializers.ModelSerializer):
@@ -134,11 +100,7 @@ class LostItemCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = LostItem
         fields = ('__all__')
-
-        extra_kwargs = {
-            'enabled': {'read_only': True},
-            'closed_case': {'read_only': True},
-            }
+        read_only_fields = ('enabled', 'closed_case')
 
 
 class LostItemSerializer(serializers.Serializer):

@@ -10,7 +10,7 @@ class Code(models.Model):
                             default=uuid.uuid4,
                             editable=False)
     enabled = models.BooleanField(default=True)
-    seat = models.ForeignKey(Seat, on_delete=models.CASCADE, null=True)
+    seat = models.ForeignKey(Seat, on_delete=models.CASCADE)
     used = models.BooleanField(default=False)
     objects = CodeManager()
 

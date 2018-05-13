@@ -20,8 +20,7 @@ class Disabled(models.Model):
     action = models.NullBooleanField(choices=((True, "Enable"),
                                               (False, "Disable")), default=True)
     cause = models.CharField(max_length=300, blank=True)
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True,
-                                blank=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
     date = models.DateField(auto_now=True, blank=True)
     fk_object = models.PositiveIntegerField()
     model = models.CharField(max_length=13, choices=MODEL_CHOICE)
