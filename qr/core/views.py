@@ -3,6 +3,7 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from django.db.models.functions import Lower
 from django.db.models import Q
+from django.db.models import F
 from django.shortcuts import get_object_or_404, get_list_or_404
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import User
@@ -33,6 +34,7 @@ from core.serializers import (
     CustomUserSerializer,
     AddressSerializer,
     VisitorSerializer,
+    UserSerializerListCustom
 )
 
 
@@ -70,7 +72,8 @@ class CompanyViewSet(viewsets.ModelViewSet):
         query = self.request.GET.get("search")
         if query:
             queryset_list = queryset_list.filter(
-                        Q(name__icontains=query)
+                        Q(name__icontains=query) |
+                        Q(nit__icontains=query)
                         ).distinct()
             serializer = CompanySerializerList(queryset_list, many=True)
             return Response(serializer.data)
@@ -98,11 +101,13 @@ class SeatViewSet(viewsets.ModelViewSet):
     El address de la sede se agrega en otro endpoint.
     Para filtrar por el campo name  /?search=(name).
     -Detail: muestra los detalles de una sede, permite editarla y eliminarla,
+
+    se filtra con el nombre de la sede
     """
 
     queryset = Seat.objects.all().order_by(Lower('name'))
     serializer_class = SeatSerializerList
-    permission_classes = (DRYPermissions,)
+    #permission_classes = (DRYPermissions,)
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ['name']
 
@@ -161,7 +166,7 @@ class SeatUserViewSet(viewsets.ModelViewSet):
     Para filtrar ser usa ?search=(contenido), se puede buscar por
     DNI, nombre de usario, correo, nombre o apellido.
 
-    para ver los datos del customUser ir al siguiente endpoint:
+    para editar los datos del customUser ir al siguiente endpoint:
 
     http://localhost:8000/core/companies/id/seats/id/users/id/custom/
     """
@@ -171,23 +176,33 @@ class SeatUserViewSet(viewsets.ModelViewSet):
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ['username', 'email', 'dni']
 
+    def queryAnnotate(self, users):
+        users = users \
+                    .values('id', 'dni',) \
+                    .annotate(last_login=F('user__last_login'), is_superuser=F('user__is_superuser'), \
+                              username=F('user__username'), first_name=F('user__first_name'), \
+                              last_name=F('user__last_name'), email=F('user__email'), \
+                              is_staff=F('user__is_staff'), is_active=F('user__is_active'), date_joined=F('user__date_joined'))
+        return users
+
     def list(self, request, company_pk, seat_pk):
-        queryset_list = User.objects.filter(
-            customuser__seat=seat_pk,
-            customuser__seat__company=company_pk
-            ).order_by(Lower('username'))
+        queryset_list = CustomUser.objects.filter(
+            seat=seat_pk,
+            seat__company=company_pk
+            ).order_by(Lower('user__username'))
+        users = self.queryAnnotate(queryset_list)
+        print(users)
         query = self.request.GET.get("search")
         if query:
             queryset_list = queryset_list.filter(
-                        Q(username__icontains=query) |
-                        Q(first_name__icontains=query) |
-                        Q(last_name__icontains=query) |
-                        Q(email__icontains=query) |
+                        Q(user__username__icontains=query) |
+                        Q(user__first_name__icontains=query) |
+                        Q(user__last_name__icontains=query) |
+                        Q(user__email__icontains=query) |
                         Q(dni__icontains=query)
                         ).distinct()
-            serializer = UserSerializerList(queryset_list, many=True)
-            return Response(serializer.data)
-        serializer = UserSerializerList(queryset_list, many=True)
+        users = self.queryAnnotate(queryset_list)
+        serializer = UserSerializerListCustom(users, many=True)
         return Response(serializer.data)
 
     def create(self, request, company_pk, seat_pk):
@@ -209,13 +224,11 @@ class SeatUserViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def retrieve(self, request, pk, company_pk, seat_pk):
-        query = get_object_or_404(
-                                User,
-                                customuser__seat=seat_pk,
-                                customuser__seat__company=company_pk,
-                                id=pk
-                                )
-        serializer = UserSerializerDetail(query)
+        user = CustomUser.objects.filter(seat__company__id=company_pk, seat__id=seat_pk, id=pk)
+        if (not len(user)):
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        checks = self.queryAnnotate(user)
+        serializer = UserSerializerListCustom(checks, many=True)
         return Response(serializer.data)
 
 
@@ -261,6 +274,7 @@ class SeatCustomUserDetail(generics.RetrieveUpdateDestroyAPIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class SeatAddress(generics.RetrieveUpdateDestroyAPIView,

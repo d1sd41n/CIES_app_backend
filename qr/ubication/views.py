@@ -21,6 +21,10 @@ class CountryViewSet(viewsets.ModelViewSet):
     """
     list:
     Filtra por name y postalcode
+    ejemplo:
+
+    http://localhost:8000/ubication/countries/?search="mordor"
+    sin las comillas
 
     retrieve:
     Retorna un país con id específico
