@@ -82,6 +82,20 @@ class UserSerializerList(serializers.ModelSerializer):
             }
 
 
+class UserSerializerListCustom(serializers.Serializer):
+    id = serializers.IntegerField()
+    last_login = serializers.DateTimeField()
+    is_superuser = serializers.BooleanField(default=False)
+    username = serializers.CharField(max_length=100)
+    first_name = serializers.CharField(max_length=100)
+    last_name = serializers.CharField(max_length=100)
+    is_staff = serializers.BooleanField(default=False)
+    is_active = serializers.BooleanField(default=False)
+    date_joined = serializers.DateTimeField()
+    dni = serializers.CharField(max_length=100)
+    email = serializers.CharField(max_length=100)
+
+
 class UserSerializerDetail(serializers.ModelSerializer):
     """Lista el usuario espesificado de la sede,
     solo muestra los datos de User, no se muestran los de CustomUser,
