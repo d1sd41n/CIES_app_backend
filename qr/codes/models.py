@@ -10,13 +10,17 @@ class Code(models.Model):
                             default=uuid.uuid4,
                             editable=False)
     enabled = models.BooleanField(default=True)
-    seat = models.ForeignKey(Seat, on_delete=models.CASCADE)
+    seat = models.ForeignKey(Seat,
+                             on_delete=models.CASCADE,
+                             null=True)
     used = models.BooleanField(default=False)
     objects = CodeManager()
 
     def has_read_permission(request):
-        group = request.user.groups.filter(Q(name="Developer") |
-                                           Q(name="Manager") |
+        developer_permission = request.user.groups.filter(Q(name="Developer"))
+        if developer_permission:
+            return True
+        group = request.user.groups.filter(Q(name="Manager") |
                                            Q(name="Security Boss"))
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
@@ -27,33 +31,17 @@ class Code(models.Model):
         return False
 
     def has_object_read_permission(self, request):
-        group = request.user.groups.filter(Q(name="Developer") |
-                                           Q(name="Manager") |
-                                           Q(name="Security Boss"))
-        parameters = [parameter for parameter in request.path_info
-                      if parameter.isdigit()]
-        user_company = str(request.user.customuser.seathasuser.seat.company_id)
-        print(request.user)
-        if group and user_company == parameters[0]:
-            return True
-        return False
+        return True
 
     def has_object_write_permission(self, request):
-        group = request.user.groups.filter(Q(name="Developer") |
-                                           Q(name="Manager") |
-                                           Q(name="Security Boss"))
-        parameters = [parameter for parameter in request.path_info
-                      if parameter.isdigit()]
-        user_company = str(request.user.customuser.seathasuser.seat.company_id)
-        print(request.user)
-        if group and user_company == parameters[0]:
-            return True
-        return False
+        return True
 
     @staticmethod
     def has_write_permission(request):
-        group = request.user.groups.filter(Q(name="Developer") |
-                                           Q(name="Manager") |
+        developer_permission = request.user.groups.filter(Q(name="Developer"))
+        if developer_permission:
+            return True
+        group = request.user.groups.filter(Q(name="Manager") |
                                            Q(name="Security Boss"))
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]

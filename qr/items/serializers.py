@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from django.db.models import Q
 from items.models import (
         Item,
         CheckIn,
@@ -11,6 +10,7 @@ from items.models import (
 
 class ItemSerializer(serializers.Serializer):
     id = serializers.IntegerField()
+    code = serializers.CharField(max_length=200)
     reference = serializers.CharField(max_length=30)
     color = serializers.CharField(max_length=30)
     description = serializers.CharField(max_length=255)
@@ -29,6 +29,7 @@ class ItemSerializer(serializers.Serializer):
     class Meta:
         model = Item
         fields = ('__all__')
+        extra_kwargs = {'enabled': {'read_only': True}}
 
 
 class ChekinSerializer(serializers.Serializer):
@@ -45,15 +46,16 @@ class ChekinSerializer(serializers.Serializer):
     go_in = serializers.BooleanField()
     date = serializers.DateTimeField()
 
+    class Meta:
+        extra_kwargs = {'enabled': {'read_only': True}}
+
 
 class CheckInCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CheckIn
         fields = ('__all__')
-        extra_kwargs = {
-            'date': {'read_only': True},
-            }
+        read_only_fields = ('date', 'enabled')
 
 
 class TypeItemSerializer(serializers.ModelSerializer):
@@ -61,6 +63,7 @@ class TypeItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = TypeItem
         fields = ('__all__')
+        extra_kwargs = {'enabled': {'read_only': True}}
 
 
 class BrandSerializer(serializers.ModelSerializer):
@@ -68,6 +71,7 @@ class BrandSerializer(serializers.ModelSerializer):
     class Meta:
         model = Brand
         fields = ('__all__')
+        extra_kwargs = {'enabled': {'read_only': True}}
 
 
 class RegisterItem(serializers.ModelSerializer):
@@ -93,6 +97,7 @@ class RegisterItemTest(serializers.ModelSerializer):
                   'seat_registration',
                   'registration_date',
                   'registered_by')
+        extra_kwargs = {'enabled': {'read_only': True}}
 
 
 class LostItemCreateSerializer(serializers.ModelSerializer):
@@ -120,3 +125,6 @@ class LostItemSerializer(serializers.Serializer):
     email = serializers.EmailField()
     visitor_phone = serializers.CharField(max_length=20)
     closed_case = serializers.BooleanField(default=False)
+
+    class Meta:
+        extra_kwargs = {'enabled': {'read_only': True}}

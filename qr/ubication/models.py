@@ -114,8 +114,10 @@ class Location(models.Model):
 
     @staticmethod
     def has_read_permission(request):
-        group = request.user.groups.filter(Q(name="Developer") |
-                                           Q(name="Manager"))
+        developer_permission = request.user.groups.filter(Q(name="Developer"))
+        if developer_permission:
+            return True
+        group = request.user.groups.filter(Q(name="Manager"))
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
         user_company = str(request.user.customuser.seathasuser.seat.company_id)
@@ -133,8 +135,10 @@ class Location(models.Model):
 
     @staticmethod
     def has_write_permission(request):
-        group = request.user.groups.filter(Q(name="Developer") |
-                                           Q(name="Manager"))
+        developer_permission = request.user.groups.filter(Q(name="Developer"))
+        if developer_permission:
+            return True
+        group = request.user.groups.filter(Q(name="Manager"))
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
         user_company = str(request.user.customuser.seathasuser.seat.company_id)

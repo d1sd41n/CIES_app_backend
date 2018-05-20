@@ -1,10 +1,10 @@
 from rest_framework import serializers
-from django.contrib.auth.models import User
 from django.db.models.functions import Lower
 from ubication.models import Location
 from core.models import (
     Company,
     Seat,
+    UserPermissions,
     CustomUser,
     Visitor,
 )
@@ -15,11 +15,7 @@ class VisitorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Visitor
         fields = ('__all__')
-
-        extra_kwargs = {
-            'company': {'write_only': True},
-            'enabled': {'write_only': True},
-            }
+        read_only_fields = ('company', 'enabled')
 
 
 class CompanySerializerList(serializers.ModelSerializer):
@@ -27,6 +23,7 @@ class CompanySerializerList(serializers.ModelSerializer):
     class Meta:
         model = Company
         fields = ('id', 'nit', 'name', 'email', 'website')
+        extra_kwargs = {'enabled': {'read_only': True}}
 
     def get_seats(self, obj):
         c_qs = Seat.objects.filter(company=obj).order_by(Lower('name'))
@@ -45,9 +42,7 @@ class SeatSerializerList(serializers.ModelSerializer):
                   'company',
                   'enabled')
 
-        extra_kwargs = {
-            'company': {'write_only': True},
-            }
+        read_only_fields = ('company', 'enabled')
 
 
 class SeatSerializerDetail(serializers.ModelSerializer):
@@ -55,12 +50,13 @@ class SeatSerializerDetail(serializers.ModelSerializer):
     class Meta:
         model = Seat
         fields = '__all__'
+        extra_kwargs = {'enabled': {'read_only': True}}
 
 
 class UserSerializerList(serializers.ModelSerializer):
 
     class Meta:
-        model = User
+        model = UserPermissions
         fields = (
             'id',
             'last_login',
@@ -74,12 +70,7 @@ class UserSerializerList(serializers.ModelSerializer):
             'date_joined',
             'password',
             )
-        extra_kwargs = {
-            'password': {'write_only': True},
-            'last_login': {'read_only': True},
-            'date_joined': {'read_only': True},
-            'id': {'read_only': True},
-            }
+        read_only_fields = ('password', 'date_joined', 'last_login', 'enabled')
 
 
 class UserSerializerDetail(serializers.ModelSerializer):
@@ -88,7 +79,7 @@ class UserSerializerDetail(serializers.ModelSerializer):
     Y desde aqui solo se editan los datos de user"""
 
     class Meta:
-        model = User
+        model = UserPermissions
         fields = (
             'id',
             'last_login',
@@ -101,11 +92,7 @@ class UserSerializerDetail(serializers.ModelSerializer):
             'is_active',
             'date_joined',
             )
-        extra_kwargs = {
-            'username': {'read_only': True},
-            'last_login': {'read_only': True},
-            'date_joined': {'read_only': True},
-            }
+        read_only_fields = ('username', 'last_login', 'date_joined', 'enabled')
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
@@ -117,9 +104,11 @@ class CustomUserSerializer(serializers.ModelSerializer):
             'dni',
             'enabled',
         )
+        extra_kwargs = {'enabled': {'read_only': True}}
 
 
 class AddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = Location
         fields = '__all__'
+        extra_kwargs = {'enabled': {'read_only': True}}

@@ -3,7 +3,6 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from django.db.models.functions import Lower
 from django.db.models import Q
-from django.http import QueryDict
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from dry_rest_permissions.generics import DRYPermissions
@@ -40,26 +39,14 @@ class CheckInViewSet(viewsets.ModelViewSet):
         "go_in": true/false,  # true si ingresa, false si sale
         "item": pk_item,  # Id del objeto que ingresa
         "seat": pk_seat,  # Id de la sede donde se realiza el último ingreso
-        "worker": pk_worker  # Id del empleado que realiza el ingreso/ la salida
-        }
-
-    #####################################################
-    Este endpoint esta en construcción
-
-    Faltan filtros y otros detalles de seguridad
-    #####################################################"""
+        "worker": pk_worker  # Id del empleado que realiza el ingreso/salida
+        }"""
     permission_classes = (DRYPermissions,)
     queryset = CheckIn.objects.all()
     serializer_class = CheckInCreateSerializer
 
     def create(self, request, company_pk, seat_pk):
         data = request.data
-        # r_queryset = get_object_or_404(
-        #             Seat,
-        #             id=seat_pk,
-        #             company=company_pk,
-        #             enabled=True
-        #             )
         serializer = CheckInCreateSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
@@ -70,24 +57,24 @@ class CheckInViewSet(viewsets.ModelViewSet):
         checks = checks \
                     .values('id', 'item', 'date', 'go_in') \
                     .annotate(seat_id=F('seat__id'),
-                              seat_dir=F('seat__address__address'), \
+                              seat_dir=F('seat__address__address'),
                               owner_last_name=F('item__owner__last_name'),
-                              owner_dni=F('item__owner__dni'), \
+                              owner_dni=F('item__owner__dni'),
                               type_item=F('item__type_item__kind'),
-                              owner_name=F('item__owner__first_name'), \
+                              owner_name=F('item__owner__first_name'),
                               lost=F('item__lost'),)
         return checks
 
     def list(self, request, company_pk, seat_pk):
         checks = CheckIn.objects.filter(seat__company__id=company_pk,
                                         seat__id=seat_pk)
-        # query = self.request.GET.get("last_name")
-        # if query:
-        #     queryset_list = queryset_list.filter(
-        #                 Q(name__icontains=query)
-        #                 ).distinct()
-            # serializer = VisitorSerializer(queryset_list, many=True)
-            # return Response(serializer.data)
+        query = self.request.GET.get("last_name")
+        if query:
+            queryset_list = queryset_list.filter(
+                        Q(item__owner__dni__icontains=query)
+                        ).distinct()
+            serializer = VisitorSerializer(queryset_list, many=True)
+            return Response(serializer.data)
         checks = self.queryAnnotate(checks)
         serializer = ChekinSerializer(checks, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -113,10 +100,10 @@ class RegisterItemViewSet(generics.CreateAPIView):
     {
     "reference": "test_reference",  # Referencia del objeto como una string
     "color": "test_color",  # Color del objeto como una string
-    "description": "test_description",  # Descripción del objeto como una string
+    "description": "test_description",  # Descripción del objeto, una string
     "lost": true/false, # true si el objeto está perdido, false si no
     "enabled": true/false, # true si el objeto está habilitado, false si no
-    "registration_date": "yyyy-mm-dd",  # Fecha del registro default=timezone.now()
+    "registration_date": "yyyy-mm-dd",  # Fecha del registro, default actual
     "type_item": pk_type_item,  # Id del tipo de objeto
     "code": "test_hash", # Hash relacionado al código QR
     "owner": pk_owner,  # Id del dueño del objeto
@@ -135,11 +122,11 @@ class RegisterItemViewSet(generics.CreateAPIView):
             return Response('El ingreso no se realizó en esta sede',
                             status=status.HTTP_400_BAD_REQUEST)
         r_queryset = get_object_or_404(
-                    Seat,
-                    id=seat_pk,
-                    company=company_pk,
-                    enabled=True
-                    )
+                                       Seat,
+                                       id=seat_pk,
+                                       company=company_pk,
+                                       enabled=True
+                                       )
         serializer = RegisterItem(data=data)
         if serializer.is_valid():
             serializer.save(registered_by=request.user, enabled=True)
@@ -151,7 +138,8 @@ class ItemViewSet(viewsets.ReadOnlyModelViewSet):
     """"
     En este EndPoint se pueden ver todos los items registrados
     en una compañía con todos sus detalles, como dueño,
-    DNI del dueño, la sede en que se registró, el empleado que lo registró...
+    DNI del dueño, la sede en que se registró,
+    el empleado que lo registró, etc.
 
     Este EndPoint es de sólo lectura,
     para registrar items ir a la siguiente ruta:
@@ -308,11 +296,11 @@ class BrandItem(viewsets.ModelViewSet):
 
     def create(self, request, company_pk, typeitem_pk):
         validator = get_object_or_404(
-                    TypeItem,
-                    company=company_pk,
-                    pk=typeitem_pk,
-                    enabled=True
-                    )
+                                        TypeItem,
+                                        company=company_pk,
+                                        pk=typeitem_pk,
+                                        enabled=True
+                                        )
         data = request.data.copy()
         data["type_item"] = typeitem_pk
         serializer = BrandSerializer(data=data)
@@ -322,25 +310,24 @@ class BrandItem(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-
 class LostItemView(viewsets.ModelViewSet):
     """
     En este endpoint se reigstran los item perdidos,
     este es el JSON de ejemplo
     <pre>
     {
-    "description": "test_description",  # Descripción del objeto perdido, como una string
-    "date": "aa-mm-dd hh:mm:ss.ff",  # Fecha en que se perdió el objeto, DateTimeField por default la actual
-    "email": "test_email@testserver.test",  # Email del dueño del objeto, como una string
-    "visitor_phone": "test_phone",  # Teléfono del dueño del objeto, como un int
+    "description": "test_description",  # Descripción del objeto perdido,
+    como una string
+    "date": "aa-mm-dd hh:mm:ss.ff",  # Fecha en que se perdió el objeto,
+    default la actual
+    "email": "test_email@testserver.test",  # Email del dueño del objeto,
+    como una string
+    "visitor_phone": "test_phone",  # Teléfono del dueño del objeto, un int
     "item": test_pk,  # Clave primaria del objeto
     "seat": test_pk  # Clave primaria de la sede donde sucedió la pérdida
     }
     </pre>
-
-    Faltan filtros
     """
-
 
     queryset = LostItem.objects.all()
     serializer_class = LostItemCreateSerializer
@@ -368,7 +355,7 @@ class LostItemView(viewsets.ModelViewSet):
     def list(self, request, company_pk):
         lost_items = LostItem.objects.filter(seat__company__id=company_pk,
                                              enabled=True)
-        query = self.request.GET.get("search")
+        # query = self.request.GET.get("search")
         # if query:
         #     items = items.filter(
         #                 Q(owner__dni__iexact=query)
