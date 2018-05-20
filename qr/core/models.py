@@ -10,19 +10,15 @@ from django.db.models import Q
 from ubication.models import Location
 
 
-class CustomUser(models.Model):
+class Company(models.Model):
+    """Almacena datos generales de una empresa.
     """
-    Usuario extendido del user de django
-    """
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    dni = models.CharField(max_length=30, unique=True)
+    nit = models.CharField(max_length=15, unique=True)
+    email = models.EmailField(unique=True, blank=True, null=True)
+    name = models.CharField(max_length=100, unique=True)
+    website = models.URLField(unique=True, blank=True, null=True)
     enabled = models.BooleanField(default=True)
-    objects = CustomUserManager()
-
-    def __str__(self):
-        return '{0}: {1} {2}'.format(self.user.first_name,
-                                     self.user.last_name,
-                                     self.dni)
+    objects = CompanyManager()
 
     @staticmethod
     def has_read_permission(request):
@@ -34,9 +30,7 @@ class CustomUser(models.Model):
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
         user_company = str(request.user.customuser.seathasuser.seat.company_id)
-        user_seat = str(request.user.customuser.seathasuser.seat_id)
-        if (group and user_company == parameters[0]
-                and user_seat == parameters[1]):
+        if group and user_company == parameters[0]:
             return True
         return False
 
@@ -56,12 +50,12 @@ class CustomUser(models.Model):
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
         user_company = str(request.user.customuser.seathasuser.seat.company_id)
-        user_seat = str(request.user.customuser.seathasuser.seat_id)
-        if (group and user_company == parameters[0]
-                and user_seat == parameters[1]):
+        if group and user_company == parameters[0]:
             return True
         return False
 
+    class Meta:
+        verbose_name_plural = "Companies"
 
 class UserPermissions(User):
     class Meta:
@@ -113,61 +107,7 @@ class Company(models.Model):
     nit = models.CharField(max_length=15, unique=True)
     email = models.EmailField(unique=True)
     name = models.CharField(max_length=100, unique=True)
-    website = models.URLField(unique=True, blank=True, null=True)
     enabled = models.BooleanField(default=True)
-    objects = CompanyManager()
-
-    @staticmethod
-    def has_read_permission(request):
-        developer_permission = request.user.groups.filter(Q(name="Developer"))
-        if developer_permission:
-            return True
-        group = request.user.groups.filter(Q(name="Manager"))
-        parameters = [parameter for parameter in request.path_info
-                      if parameter.isdigit()]
-        user_company = str(request.user.customuser.seathasuser.seat.company_id)
-        if group and user_company == parameters[0]:
-            return True
-        return False
-
-    def has_object_read_permission(self, request):
-        return True
-
-    def has_object_write_permission(self, request):
-        return True
-
-    @staticmethod
-    def has_write_permission(request):
-        developer_permission = request.user.groups.filter(Q(name="Developer"))
-        if developer_permission:
-            return True
-        group = request.user.groups.filter(Q(name="Manager"))
-        parameters = [parameter for parameter in request.path_info
-                      if parameter.isdigit()]
-        user_company = str(request.user.customuser.seathasuser.seat.company_id)
-        if group and user_company == parameters[0]:
-            return True
-        return False
-
-    class Meta:
-        verbose_name_plural = "Companies"
-
-    def __str__(self):
-        return self.name
-
-
-class Seat(models.Model):
-    """Almacena diferentes sedes de una compañia
-    """
-    address = models.OneToOneField(Location, on_delete=models.CASCADE,
-                                   blank=True, null=True)
-    company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    email = models.EmailField(blank=True)
-    name = models.CharField(max_length=100, unique=True)
-    enabled = models.BooleanField(default=True)
-    users = models.ManyToManyField(CustomUser,
-                                   through='SeatHasUser',
-                                   through_fields=('seat', 'user'))
     objects = SeatManager()
 
     @staticmethod
@@ -208,6 +148,63 @@ class Seat(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class CustomUser(models.Model):
+    """
+    Usuario extendido del user de django
+    """
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    dni = models.CharField(max_length=30, unique=True)
+    enabled = models.BooleanField(default=True)
+    seat = models.ForeignKey(Seat, on_delete=models.CASCADE)
+    # seat = models.ManyToManyField(Seat,
+    #                                through='SeatHasUser',
+    #                                through_fields=('user',
+    #                                                'seat'),
+    #                                blank=True)
+    objects = CustomUserManager()
+
+    def __str__(self):
+        return '{0}: {1} {2}'.format(self.user.first_name,
+                                     self.user.last_name,
+                                     self.dni)
+
+    @staticmethod
+    def has_read_permission(request):
+        developer_permission = request.user.groups.filter(Q(name="Developer"))
+        if developer_permission:
+            return True
+        group = request.user.groups.filter(Q(name="Manager"))
+        parameters = [parameter for parameter in request.path_info
+                      if parameter.isdigit()]
+        user_company = str(request.user.customuser.seathasuser.seat.company_id)
+        user_seat = str(request.user.customuser.seathasuser.seat_id)
+        if (group and user_company == parameters[0]
+                and user_seat == parameters[1]):
+            return True
+        return False
+
+    def has_object_read_permission(self, request):
+        return True
+
+    def has_object_write_permission(self, request):
+        return True
+
+    @staticmethod
+    def has_write_permission(request):
+        developer_permission = request.user.groups.filter(Q(name="Developer"))
+        if developer_permission:
+            return True
+        group = request.user.groups.filter(Q(name="Manager"))
+        parameters = [parameter for parameter in request.path_info
+                      if parameter.isdigit()]
+        user_company = str(request.user.customuser.seathasuser.seat.company_id)
+        user_seat = str(request.user.customuser.seathasuser.seat_id)
+        if (group and user_company == parameters[0]
+                and user_seat == parameters[1]):
+            return True
+        return False
 
 
 class SeatHasUser(models.Model):

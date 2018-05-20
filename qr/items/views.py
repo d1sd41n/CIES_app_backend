@@ -44,6 +44,8 @@ class CheckInViewSet(viewsets.ModelViewSet):
     permission_classes = (DRYPermissions,)
     queryset = CheckIn.objects.all()
     serializer_class = CheckInCreateSerializer
+    filter_backends = [SearchFilter]
+    search_fields = ['item', 'worker']
 
     def create(self, request, company_pk, seat_pk):
         data = request.data
@@ -149,6 +151,13 @@ class ItemViewSet(viewsets.ReadOnlyModelViewSet):
     Se puede buscar por medio del DNI del dueño:
     (http://localhost:8000/items/companies/pk/items/?search=owner__dni)"""
 
+    se filtra usando los campos:
+    type item
+    brand
+    owner name
+    owner last_name
+    owner dni"""
+
     permission_classes = (DRYPermissions,)
     queryset = Item.objects.all()
     serializer_class = ItemSerializer
@@ -176,7 +185,11 @@ class ItemViewSet(viewsets.ReadOnlyModelViewSet):
         query = self.request.GET.get("search")
         if query:
             items = items.filter(
-                        Q(owner__dni__iexact=query)
+                        Q(owner__dni__iexact=query) |
+                        Q(type_item__kind__iexact=query) |
+                        Q(owner__first_name__iexact=query) |
+                        Q(owner__last_name__iexact=query) |
+                        Q(brand__brand__iexact=query)
                         ).distinct()
         items = self.queryAnnotate(items)
         serializer = ItemSerializer(items, many=True)
@@ -203,12 +216,14 @@ class CompanyTypeItem(viewsets.ModelViewSet):
     "enabled": true/false  # true si está habilitado, false si no
     "company": pk_company  # Id de la compañía
     }
+
+    se filtra con: kind
     """
     permission_classes = (DRYPermissions,)
     queryset = TypeItem.objects.all().order_by(Lower('kind'))
     serializer_class = TypeItemSerializer
-    # filter_backends = [SearchFilter, OrderingFilter]
-    # search_fields = ['name']
+    filter_backends = [SearchFilter]
+    search_fields = ['kind']
 
     def list(self, request, company_pk):
         queryset_list = TypeItem.objects.filter(
@@ -217,11 +232,11 @@ class CompanyTypeItem(viewsets.ModelViewSet):
             ).order_by(
                 Lower('kind')
             )
-        # query = self.request.GET.get("search")
-        # if query:
-        #     queryset_list = queryset_list.filter(
-        #                 Q(name__icontains=query)
-        #                 ).distinct()
+        query = self.request.GET.get("search")
+        if query:
+            queryset_list = queryset_list.filter(
+                        Q(kind__icontains=query)
+                        ).distinct()
         serializer = TypeItemSerializer(queryset_list, many=True)
         return Response(serializer.data)
 
@@ -258,12 +273,14 @@ class BrandItem(viewsets.ModelViewSet):
     "type_item": pk_type_item  # Id del tipo de item
     }
 
+    se filtra con brand
+
     """
     permission_classes = (DRYPermissions,)
     queryset = Brand.objects.all().order_by(Lower('brand'))
     serializer_class = BrandSerializer
-    # filter_backends = [SearchFilter, OrderingFilter]
-    # search_fields = ['name']
+    filter_backends = [SearchFilter]
+    search_fields = ['brand']
 
     def list(self, request, company_pk, typeitem_pk):
         queryset_list = Brand.objects.filter(
@@ -273,13 +290,11 @@ class BrandItem(viewsets.ModelViewSet):
             ).order_by(
                 Lower('brand')
             )
-        # query = self.request.GET.get("last_name")
-        # if query:
-        #     queryset_list = queryset_list.filter(
-        #                 Q(name__icontains=query)
-        #                 ).distinct()
-        # serializer = VisitorSerializer(queryset_list, many=True)
-        # return Response(serializer.data)
+        query = self.request.GET.get("search")
+        if query:
+            queryset_list = queryset_list.filter(
+                        Q(brand__icontains=query)
+                        ).distinct()
         serializer = BrandSerializer(queryset_list, many=True)
         return Response(serializer.data)
 
@@ -331,8 +346,8 @@ class LostItemView(viewsets.ModelViewSet):
 
     queryset = LostItem.objects.all()
     serializer_class = LostItemCreateSerializer
-    # filter_backends = [SearchFilter, OrderingFilter]
-    # search_fields = ['name']
+    filter_backends = [SearchFilter]
+    search_fields = ['owner_dni']
 
     # def create(self, request, company_pk):
     #     print(request.data)
@@ -353,13 +368,14 @@ class LostItemView(viewsets.ModelViewSet):
         return lostitems
 
     def list(self, request, company_pk):
-        lost_items = LostItem.objects.filter(seat__company__id=company_pk,
-                                             enabled=True)
-        # query = self.request.GET.get("search")
-        # if query:
-        #     items = items.filter(
-        #                 Q(owner__dni__iexact=query)
-        #                 ).distinct()
+        lost_items = LostItem.objects.filter(seat__company__id=company_pk, enabled=True)
+        query = self.request.GET.get("search")
+        if query:
+            lost_items = lost_items.filter(
+                        Q(item__owner__dni__iexact=query) |
+                        Q(item__brand__brand=query) |
+                        Q(item__type_item__kind=query)
+                        ).distinct()
         lost_items = self.queryAnnotate(lost_items)
         serializer = LostItemSerializer(lost_items, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
