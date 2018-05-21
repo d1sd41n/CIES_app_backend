@@ -11,6 +11,7 @@ from django.http import HttpResponse
 from django.shortcuts import render
 from reportlab.lib.pagesizes import A4
 from rest_framework import viewsets
+from core.models import Seat
 from django.db.models import Q
 from rest_framework.filters import (
     SearchFilter,
@@ -58,19 +59,22 @@ def index(request):
 
 def generate_qr(request, company_pk, seat_pk):
     if request.method == 'GET':
-        return render(request, 'form_pdf.html')
+        context = {'seat_pk': seat_pk, 'company_pk': company_pk}
+        return render(request, 'form_pdf.html', context=context)
     elif request.method == 'POST':
         pages = int(request.POST['pages'])
+        seat = Seat.objects.get(pk=seat_pk)
         response = HttpResponse(content_type='application/pdf')
         response['Content-Disposition'] = 'filename="somefilename.pdf"'
         buffer = BytesIO()
         p = canvas.Canvas(buffer, pagesize=A4)
+        code_list = []
         for page in range(pages):
             for cols in range(13):
                 for rows in range(18):
                     code = Code()
-                    code.save()
-                    # // probablemente tenga que borrar estas 3 lineas
+                    code.seat = seat
+                    code_list.append(code)
                     img = qrcode.make(str(code.code))
                     img.save('img.png')
                     p.drawInlineImage(img,
@@ -79,6 +83,7 @@ def generate_qr(request, company_pk, seat_pk):
                                       width=50,
                                       height=50)
             p.showPage()
+        Code.objects.bulk_create(code_list)
         p.save()
         pdf = buffer.getvalue()
         buffer.close()

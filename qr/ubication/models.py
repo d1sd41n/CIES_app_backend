@@ -41,7 +41,7 @@ class Country(models.Model):
 class Region(models.Model):
     """Se almacena el estado, departamento o region
     """
-    name = models.CharField(unique=True, max_length=50)
+    name = models.CharField(max_length=50)
     country = models.ForeignKey(Country, on_delete=models.CASCADE)
     objects = RegionManager()
 
@@ -72,7 +72,7 @@ class Region(models.Model):
 class City(models.Model):
     """Se almacena ciudades o municipios
     """
-    name = models.CharField(unique=True, max_length=50)
+    name = models.CharField(max_length=50)
     region = models.ForeignKey(Region, on_delete=models.CASCADE)
     objects = CityManager()
 
@@ -106,16 +106,18 @@ class City(models.Model):
 class Location(models.Model):
     """Almacena la latitud y longitud de algun objeto
     """
-    address = models.CharField(max_length=100, unique=True)
-    latitude = models.FloatField(unique=True, blank=True, null=True)
-    longitude = models.FloatField(unique=True, blank=True, null=True)
+    address = models.CharField(max_length=100)
+    latitude = models.FloatField(blank=True, null=True)
+    longitude = models.FloatField(blank=True, null=True)
     city = models.ForeignKey(City, on_delete=models.CASCADE)
     objects = LocationManager()
 
     @staticmethod
     def has_read_permission(request):
-        group = request.user.groups.filter(Q(name="Developer") |
-                                           Q(name="Manager"))
+        developer_permission = request.user.groups.filter(Q(name="Developer"))
+        if developer_permission:
+            return True
+        group = request.user.groups.filter(Q(name="Manager"))
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
         user_company = str(request.user.customuser.seathasuser.seat.company_id)
@@ -133,8 +135,10 @@ class Location(models.Model):
 
     @staticmethod
     def has_write_permission(request):
-        group = request.user.groups.filter(Q(name="Developer") |
-                                           Q(name="Manager"))
+        developer_permission = request.user.groups.filter(Q(name="Developer"))
+        if developer_permission:
+            return True
+        group = request.user.groups.filter(Q(name="Manager"))
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
         user_company = str(request.user.customuser.seathasuser.seat.company_id)

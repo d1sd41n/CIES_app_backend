@@ -92,7 +92,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
 
 class SeatViewSet(viewsets.ModelViewSet):
     """
-    Ejemplo URL: http://localhost:8000/core/companies/1/seats
+    Ejemplo URL: http://localhost:8000/core/companies/pk/seats
 
     -List: Lista todas las sedes de la compañia,
     cuando se hace un post para crear una sede no se debe especificar
@@ -141,7 +141,7 @@ class SeatViewSet(viewsets.ModelViewSet):
 
 class SeatUserViewSet(viewsets.ModelViewSet):
     """
-    Ejemplo URL:  http://localhost:8000/core/companies/1/seats/1/users
+    Ejemplo URL:  http://localhost:8000/core/companies/pk/seats/pk/users
     List:
     Este endpoint lista todos los usuarios de la sede.
     Solo lista el modelo User, no lista los datos de CustomUser,

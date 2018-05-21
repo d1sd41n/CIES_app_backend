@@ -8,6 +8,7 @@ class CountrySerializerList(serializers.ModelSerializer):
     class Meta:
         model = Country
         fields = ('id', 'name', 'postalcode')
+        extra_kwargs = {'enabled': {'read_only': True}}
 
 
 class CountrySerializerDetail(serializers.ModelSerializer):
@@ -16,6 +17,7 @@ class CountrySerializerDetail(serializers.ModelSerializer):
     class Meta:
         model = Country
         fields = ('id', 'name', 'postalcode', 'vat', 'regions')
+        extra_kwargs = {'enabled': {'read_only': True}}
 
     def get_regions(self, obj):
         query = obj.region_set.all().order_by(Lower('name'))
@@ -28,6 +30,7 @@ class RegionSerializerDetail(serializers.ModelSerializer):
     class Meta:
         model = Region
         fields = ('id', 'name', 'cities')
+        extra_kwargs = {'enabled': {'read_only': True}}
 
     def get_cities(self, obj):
         c_qs = City.objects.filter(region=obj).order_by(Lower('name'))
@@ -40,6 +43,7 @@ class RegionSerializerList(serializers.ModelSerializer):
     class Meta:
         model = Region
         fields = '__all__'
+        extra_kwargs = {'enabled': {'read_only': True}}
 
 
 class CitySerializerList(serializers.ModelSerializer):
@@ -47,6 +51,7 @@ class CitySerializerList(serializers.ModelSerializer):
     class Meta:
         model = City
         fields = '__all__'
+        extra_kwargs = {'enabled': {'read_only': True}}
 
 
 class CitySerializerDetail(serializers.ModelSerializer):
@@ -55,6 +60,7 @@ class CitySerializerDetail(serializers.ModelSerializer):
     class Meta:
         model = City
         fields = ('id', 'name', 'locations')
+        extra_kwargs = {'enabled': {'read_only': True}}
 
     def get_locations(self, obj):
         query = Location.objects.filter(city=obj)
@@ -66,3 +72,4 @@ class LocationSerializerDetail(serializers.ModelSerializer):
     class Meta:
         model = Location
         fields = ('id', 'address', 'latitude', 'longitude')
+        extra_kwargs = {'enabled': {'read_only': True}}

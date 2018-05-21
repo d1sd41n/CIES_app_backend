@@ -2,7 +2,6 @@ from .managers import DisabledManager
 from core.models import Company
 from django.db import models
 from django.db.models import Q
-import datetime
 
 MODEL_CHOICE = (
                 ('brand', 'Brand'),
@@ -20,8 +19,7 @@ class Disabled(models.Model):
     action = models.NullBooleanField(choices=((True, "Enable"),
                                               (False, "Disable")), default=True)
     cause = models.CharField(max_length=300, blank=True)
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True,
-                                blank=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
     date = models.DateField(auto_now=True, blank=True)
     fk_object = models.PositiveIntegerField()
     model = models.CharField(max_length=13, choices=MODEL_CHOICE)
@@ -29,8 +27,10 @@ class Disabled(models.Model):
 
     @staticmethod
     def has_read_permission(request):
-        group = request.user.groups.filter(Q(name="Developer") |
-                                           Q(name="Manager"))
+        developer_permission = request.user.groups.filter(Q(name="Developer"))
+        if developer_permission:
+            return True
+        group = request.user.groups.filter(Q(name="Manager"))
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
         user_company = str(request.user.customuser.seathasuser.seat.company_id)
@@ -46,8 +46,10 @@ class Disabled(models.Model):
 
     @staticmethod
     def has_write_permission(request):
-        group = request.user.groups.filter(Q(name="Developer") |
-                                           Q(name="Manager"))
+        developer_permission = request.user.groups.filter(Q(name="Developer"))
+        if developer_permission:
+            return True
+        group = request.user.groups.filter(Q(name="Manager"))
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
         user_company = str(request.user.customuser.seathasuser.seat.company_id)
