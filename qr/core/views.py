@@ -5,13 +5,10 @@ from django.db.models.functions import Lower
 from django.db.models import Q
 from django.db.models import F
 from django.shortcuts import get_object_or_404, get_list_or_404
-from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import User
-from django.contrib.auth.models import Group
 from dry_rest_permissions.generics import DRYPermissions
 from rest_framework import status
 from ubication.models import Location
-
 from core.models import (
     Company,
     Seat,
@@ -19,12 +16,10 @@ from core.models import (
     Visitor,
     SeatHasUser,
 )
-
 from rest_framework.filters import (
     SearchFilter,
     OrderingFilter,
 )
-
 from core.serializers import (
     CompanySerializerList,
     SeatSerializerList,
@@ -107,7 +102,7 @@ class SeatViewSet(viewsets.ModelViewSet):
 
     queryset = Seat.objects.all().order_by(Lower('name'))
     serializer_class = SeatSerializerList
-    #permission_classes = (DRYPermissions,)
+    permission_classes = (DRYPermissions,)
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ['name']
 
@@ -179,10 +174,15 @@ class SeatUserViewSet(viewsets.ModelViewSet):
     def queryAnnotate(self, users):
         users = users \
                     .values('id', 'dni',) \
-                    .annotate(last_login=F('user__last_login'), is_superuser=F('user__is_superuser'), \
-                              username=F('user__username'), first_name=F('user__first_name'), \
-                              last_name=F('user__last_name'), email=F('user__email'), \
-                              is_staff=F('user__is_staff'), is_active=F('user__is_active'), date_joined=F('user__date_joined'))
+                    .annotate(last_login=F('user__last_login'),
+                              is_superuser=F('user__is_superuser'),
+                              username=F('user__username'),
+                              first_name=F('user__first_name'),
+                              last_name=F('user__last_name'),
+                              email=F('user__email'),
+                              is_staff=F('user__is_staff'),
+                              is_active=F('user__is_active'),
+                              date_joined=F('user__date_joined'))
         return users
 
     def list(self, request, company_pk, seat_pk):
@@ -224,7 +224,8 @@ class SeatUserViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def retrieve(self, request, pk, company_pk, seat_pk):
-        user = CustomUser.objects.filter(seat__company__id=company_pk, seat__id=seat_pk, id=pk)
+        user = CustomUser.objects.filter(seat__company__id=company_pk,
+                                         seat__id=seat_pk, id=pk)
         if (not len(user)):
             return Response(status=status.HTTP_404_NOT_FOUND)
         checks = self.queryAnnotate(user)
@@ -274,7 +275,6 @@ class SeatCustomUserDetail(generics.RetrieveUpdateDestroyAPIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 
 class SeatAddress(generics.RetrieveUpdateDestroyAPIView,
