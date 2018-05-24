@@ -149,7 +149,7 @@ class ItemViewSet(viewsets.ReadOnlyModelViewSet):
     (http://localhost:8000/items/companies/pk/seats/pk/registeritem/)
 
     Se puede buscar por medio del DNI del dueño:
-    (http://localhost:8000/items/companies/pk/items/?search=owner__dni)"""
+    (http://localhost:8000/items/companies/pk/items/?search=owner__dni)
 
     se filtra usando los campos:
     type item
@@ -368,7 +368,8 @@ class LostItemView(viewsets.ModelViewSet):
         return lostitems
 
     def list(self, request, company_pk):
-        lost_items = LostItem.objects.filter(seat__company__id=company_pk, enabled=True)
+        lost_items = LostItem.objects.filter(seat__company__id=company_pk,
+                                             enabled=True)
         query = self.request.GET.get("search")
         if query:
             lost_items = lost_items.filter(
