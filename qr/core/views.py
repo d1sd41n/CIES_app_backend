@@ -369,6 +369,7 @@ class CompanyVisitor(viewsets.ModelViewSet):
     "first_name": "Test_name",  # Primer nombre, como una string
     "last_name": "Test_lastname",  # Segundo nombre, como una string
     "dni": "Test_dni",  # Número de identidad, como una string
+    'email': "email@company.com" # email del visitante
     "enabled": true/false  # true si está habilitado, false si no
     }
 

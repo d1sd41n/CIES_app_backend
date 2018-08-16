@@ -246,6 +246,7 @@ class Visitor(models.Model):
     dni = models.CharField(max_length=30, unique=True)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     enabled = models.BooleanField(default=True)
+    email = models.EmailField(null=True)
     objects = VisitorManager()
 
     def has_read_permission(request):
