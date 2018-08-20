@@ -1,5 +1,6 @@
 from rest_framework import generics
 from rest_framework import viewsets
+from django.contrib.auth.models import Group
 from rest_framework.response import Response
 from django.db.models.functions import Lower
 from django.db.models import Q
@@ -146,6 +147,7 @@ class SeatUserViewSet(viewsets.ModelViewSet):
     Para hacer el post correctamente se deben incluir los datos tanto de User
     como CustomUser en el mismo JSON, ejemplo:
 
+    <pre>
     {
     "is_superuser": true/false,  # true si es un super usuario, false si no
     "username": "Test_username",  # Nombre de usuario, como una string
@@ -155,8 +157,24 @@ class SeatUserViewSet(viewsets.ModelViewSet):
     "is_staff": true/false,  # true si el usuario es staff, false si no
     "is_active": true/false,  # true si el usuario está activo, false  si no
     "password": "testpassword",  # La contraseña del usuario, como una string
+    "type": "guard", # Tipo de usuario si es un guardia o es administrador (###nombre de grupos todavia no definidos#####)
     "dni": "test_dni"  # El número de identidad del usuario, como una string
     }
+    </pre>
+
+    El siguiente json lo uso para test (mientras estamos en desarrollo), porfavor no me lo borren...
+    <pre>
+    {
+    "is_superuser": false,
+    "username": "farolito",
+    "first_name": "prp",
+    "last_name": "psps",
+    "email": "q@l.com",
+    "password": "testpassword",
+    "type": "guard",
+    "dni": "test_dni"
+    }
+    </pre>
 
     Para filtrar ser usa ?search=(contenido), se puede buscar por
     DNI, nombre de usario, correo, nombre o apellido.
@@ -167,11 +185,12 @@ class SeatUserViewSet(viewsets.ModelViewSet):
     """
     queryset = User.objects.all().order_by(Lower('username'))
     permission_classes = (DRYPermissions,)
-    serializer_class = UserSerializerList
+    serializer_class = CustomUserSerializer
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ['username', 'email', 'dni']
 
     def queryAnnotate(self, users):
+        # print(user.groups.all())
         users = users \
                     .values('id', 'dni',) \
                     .annotate(last_login=F('user__last_login'),
@@ -182,7 +201,8 @@ class SeatUserViewSet(viewsets.ModelViewSet):
                               email=F('user__email'),
                               is_staff=F('user__is_staff'),
                               is_active=F('user__is_active'),
-                              date_joined=F('user__date_joined'))
+                              date_joined=F('user__date_joined'),
+                              type=F('user__groups'))
         return users
 
     def list(self, request, company_pk, seat_pk):
@@ -191,7 +211,6 @@ class SeatUserViewSet(viewsets.ModelViewSet):
             seat__company=company_pk
             ).order_by(Lower('user__username'))
         users = self.queryAnnotate(queryset_list)
-        print(users)
         query = self.request.GET.get("search")
         if query:
             queryset_list = queryset_list.filter(
@@ -206,22 +225,26 @@ class SeatUserViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def create(self, request, company_pk, seat_pk):
-        serializer = UserSerializerList(data=request.data)
-        if serializer.is_valid():
+        serializer_user = UserSerializerList(data=request.data)
+        serializer_custom = UserSerializerList(data=request.data)
+        if serializer_custom.is_valid() and serializer_user.is_valid() and request.data["type"] != "Developer":
+            # Aqui verificamos la existencia de la sede, compañia y grupo
             seat = get_object_or_404(
                         Seat,
                         Q(id=seat_pk) &
                         Q(company=company_pk)
                         )
-            serializer.save()
-            id = serializer.data['id']
-            user = User.objects.get(pk=id)
+            group = get_object_or_404(
+                        Group,
+                        name=request.data["type"]
+                        )
+            user = serializer_user.save()
             request.data['user'] = user
-            request.data['address'] = None
             customUser = CustomUser.objects.create_custom_user(request.data)
             SeatHasUser.objects.create(seat=seat, user=customUser)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            group.user_set.add(user)
+            return Response(request.data, status=status.HTTP_201_CREATED)
+        return Response({"Error": "Datos ingresados de forma incorrecta"}, status=status.HTTP_400_BAD_REQUEST)
 
     def retrieve(self, request, pk, company_pk, seat_pk):
         user = CustomUser.objects.filter(seat__company__id=company_pk,

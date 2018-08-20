@@ -30,9 +30,10 @@ class CustomUser(models.Model):
     objects = CustomUserManager()
 
     def __str__(self):
-        return '{0}: {1} {2}'.format(self.user.first_name,
-                                     self.user.last_name,
-                                     self.dni)
+        return '{0} - {1}: {2} {3}'.format(self.user.username,
+                                           self.user.first_name,
+                                           self.user.last_name,
+                                           self.dni)
 
     @staticmethod
     def has_read_permission(request):
