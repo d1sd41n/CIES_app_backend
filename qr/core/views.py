@@ -255,6 +255,20 @@ class SeatUserViewSet(viewsets.ModelViewSet):
         serializer = UserSerializerListCustom(checks, many=True)
         return Response(serializer.data)
 
+    def destroy(self, request, pk, company_pk, seat_pk, **kwargs):
+        user = get_object_or_404(
+                    User,
+                    id=pk,
+                    )
+        custom = get_object_or_404(
+                    CustomUser,
+                    user=user.id,
+                    seat=seat_pk,
+                    seat__company=company_pk
+                    )
+        user.delete()
+        return Response({"Delete": "Done"}, status=status.HTTP_204_NO_CONTENT)
+
     def update(self, request, pk, company_pk, seat_pk, **kwargs):
         try:
             request.data['type']
