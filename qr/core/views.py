@@ -139,13 +139,13 @@ class SeatUserViewSet(viewsets.ModelViewSet):
     """
     Ejemplo URL:  http://localhost:8000/core/companies/pk/seats/pk/users
     List:
-    Este endpoint lista todos los usuarios de la sede.
-    Solo lista el modelo User, no lista los datos de CustomUser,
-    Sin embargo el metodo post de este endpoint llena ambos modelos
-    User y CustomUser.
+    Este endpoint gestiona usuarios de una sede.
 
     Para hacer el post correctamente se deben incluir los datos tanto de User
-    como CustomUser en el mismo JSON, ejemplo:
+    como CustomUser  y un campo adicional llamado "type" el cual
+    es el rol del usuario guardia o administrador ####(nombre de los roles sin definir todavia)###
+
+    JSON para post o put(en este caso modificando los campos que se van a cambiar), ejemplo:
 
     <pre>
     {
@@ -166,7 +166,7 @@ class SeatUserViewSet(viewsets.ModelViewSet):
     <pre>
     {
     "is_superuser": false,
-    "username": "farolito",
+    "username": "user2",
     "first_name": "prp",
     "last_name": "psps",
     "email": "q@l.com",
@@ -178,10 +178,6 @@ class SeatUserViewSet(viewsets.ModelViewSet):
 
     Para filtrar ser usa ?search=(contenido), se puede buscar por
     DNI, nombre de usario, correo, nombre o apellido.
-
-    para editar los datos del customUser ir al siguiente endpoint:
-
-    http://localhost:8000/core/companies/id/seats/id/users/id/custom/
     """
     queryset = User.objects.all().order_by(Lower('username'))
     permission_classes = (DRYPermissions,)
@@ -190,9 +186,8 @@ class SeatUserViewSet(viewsets.ModelViewSet):
     search_fields = ['username', 'email', 'dni']
 
     def queryAnnotate(self, users):
-        # print(user.groups.all())
         users = users \
-                    .values('id', 'dni',) \
+                    .values('dni',) \
                     .annotate(last_login=F('user__last_login'),
                               is_superuser=F('user__is_superuser'),
                               username=F('user__username'),
@@ -202,7 +197,8 @@ class SeatUserViewSet(viewsets.ModelViewSet):
                               is_staff=F('user__is_staff'),
                               is_active=F('user__is_active'),
                               date_joined=F('user__date_joined'),
-                              type=F('user__groups'))
+                              type=F('user__groups'),
+                              id=F('user__id'))
         return users
 
     def list(self, request, company_pk, seat_pk):
@@ -225,8 +221,12 @@ class SeatUserViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def create(self, request, company_pk, seat_pk):
+        try:
+            request.data['type']
+        except KeyError:
+            return Response({"Error": "Falta tipo de usuario"}, status=status.HTTP_400_BAD_REQUEST)
         serializer_user = UserSerializerList(data=request.data)
-        serializer_custom = UserSerializerList(data=request.data)
+        serializer_custom = CustomUserSerializer(data=request.data)
         if serializer_custom.is_valid() and serializer_user.is_valid() and request.data["type"] != "Developer":
             # Aqui verificamos la existencia de la sede, compañia y grupo
             seat = get_object_or_404(
@@ -248,12 +248,41 @@ class SeatUserViewSet(viewsets.ModelViewSet):
 
     def retrieve(self, request, pk, company_pk, seat_pk):
         user = CustomUser.objects.filter(seat__company__id=company_pk,
-                                         seat__id=seat_pk, id=pk)
+                                         seat__id=seat_pk, user__id=pk)
         if (not len(user)):
             return Response(status=status.HTTP_404_NOT_FOUND)
         checks = self.queryAnnotate(user)
         serializer = UserSerializerListCustom(checks, many=True)
         return Response(serializer.data)
+
+    def update(self, request, pk, company_pk, seat_pk, **kwargs):
+        try:
+            request.data['type']
+        except KeyError:
+            return Response({"Error": "Falta tipo de usuario"}, status=status.HTTP_400_BAD_REQUEST)
+        user = get_object_or_404(
+                    User,
+                    id=pk,
+                    )
+        custom = get_object_or_404(
+                    CustomUser,
+                    user=user.id,
+                    seat=seat_pk,
+                    seat__company=company_pk
+                    )
+        serializer_user = UserSerializerList(user, data=request.data)
+        serializer_custom = CustomUserSerializer(custom, data=request.data)
+        if serializer_user.is_valid() and serializer_custom.is_valid() and request.data["type"] != "Developer":
+            serializer_user.save()
+            serializer_custom.save()
+            if request.data["type"]=="":
+                return Response(serializer_user.data, status=status.HTTP_201_CREATED)
+            user.groups.clear()
+            group = get_object_or_404(Group, name=request.data["type"])
+            group.user_set.add(user)
+            return Response(serializer_user.data, status=status.HTTP_201_CREATED)
+        return Response({"Error": "Datos ingresados de forma incorrecta"}, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class SeatCustomUserDetail(generics.RetrieveUpdateDestroyAPIView):
