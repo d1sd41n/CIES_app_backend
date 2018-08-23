@@ -149,13 +149,10 @@ class SeatUserViewSet(viewsets.ModelViewSet):
 
     <pre>
     {
-    "is_superuser": true/false,  # true si es un super usuario, false si no
     "username": "Test_username",  # Nombre de usuario, como una string
     "first_name": "test_name",  # Primer nombre del usuario, como una string
     "last_name": "test_lastname",  # Apellido del usuario, como una string
     "email": "testemail@testserver.test",  # E-mail del usuario
-    "is_staff": true/false,  # true si el usuario es staff, false si no
-    "is_active": true/false,  # true si el usuario está activo, false  si no
     "password": "testpassword",  # La contraseña del usuario, como una string
     "type": "guard", # Tipo de usuario si es un guardia o es administrador (###nombre de grupos todavia no definidos#####)
     "dni": "test_dni"  # El número de identidad del usuario, como una string
@@ -221,13 +218,17 @@ class SeatUserViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def create(self, request, company_pk, seat_pk):
+        data = request.data.copy()
+        data["is_superuser"] = False
+        data["is_staff"] = False
+        data["is_active"] = True
         try:
-            request.data['type']
+            data['type']
         except KeyError:
             return Response({"Error": "Falta tipo de usuario"}, status=status.HTTP_400_BAD_REQUEST)
-        serializer_user = UserSerializerList(data=request.data)
-        serializer_custom = CustomUserSerializer(data=request.data)
-        if serializer_custom.is_valid() and serializer_user.is_valid() and request.data["type"] != "Developer":
+        serializer_user = UserSerializerList(data=data)
+        serializer_custom = CustomUserSerializer(data=data)
+        if serializer_custom.is_valid() and serializer_user.is_valid() and data["type"] != "Developer":
             # Aqui verificamos la existencia de la sede, compañia y grupo
             seat = get_object_or_404(
                         Seat,
@@ -236,11 +237,11 @@ class SeatUserViewSet(viewsets.ModelViewSet):
                         )
             group = get_object_or_404(
                         Group,
-                        name=request.data["type"]
+                        name=data["type"]
                         )
             user = serializer_user.save()
-            request.data['user'] = user
-            customUser = CustomUser.objects.create_custom_user(request.data)
+            data['user'] = user
+            customUser = CustomUser.objects.create_custom_user(data)
             SeatHasUser.objects.create(seat=seat, user=customUser)
             group.user_set.add(user)
             return Response(request.data, status=status.HTTP_201_CREATED)
@@ -270,8 +271,12 @@ class SeatUserViewSet(viewsets.ModelViewSet):
         return Response({"Delete": "Done"}, status=status.HTTP_204_NO_CONTENT)
 
     def update(self, request, pk, company_pk, seat_pk, **kwargs):
+        data = request.data.copy()
+        data["is_superuser"] = False
+        data["is_staff"] = False
+        data["is_active"] = True
         try:
-            request.data['type']
+            data['type']
         except KeyError:
             return Response({"Error": "Falta tipo de usuario"}, status=status.HTTP_400_BAD_REQUEST)
         user = get_object_or_404(
@@ -284,15 +289,15 @@ class SeatUserViewSet(viewsets.ModelViewSet):
                     seat=seat_pk,
                     seat__company=company_pk
                     )
-        serializer_user = UserSerializerList(user, data=request.data)
-        serializer_custom = CustomUserSerializer(custom, data=request.data)
-        if serializer_user.is_valid() and serializer_custom.is_valid() and request.data["type"] != "Developer":
+        serializer_user = UserSerializerList(user, data=data)
+        serializer_custom = CustomUserSerializer(custom, data=data)
+        if serializer_user.is_valid() and serializer_custom.is_valid() and data["type"] != "Developer":
             serializer_user.save()
             serializer_custom.save()
-            if request.data["type"]=="":
+            if data["type"]=="":
                 return Response(serializer_user.data, status=status.HTTP_201_CREATED)
             user.groups.clear()
-            group = get_object_or_404(Group, name=request.data["type"])
+            group = get_object_or_404(Group, name=data["type"])
             group.user_set.add(user)
             return Response(serializer_user.data, status=status.HTTP_201_CREATED)
         return Response({"Error": "Datos ingresados de forma incorrecta"}, status=status.HTTP_400_BAD_REQUEST)
