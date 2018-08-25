@@ -6,7 +6,6 @@ from core.models import (CustomUser,
                          SeatHasUser
                          )
 
-
 admin.site.register(CustomUser)
 admin.site.register(Company)
 admin.site.register(Seat)
