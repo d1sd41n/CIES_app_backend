@@ -1,5 +1,6 @@
 from rest_framework import generics
 from rest_framework import viewsets
+from django.contrib.auth.models import Group
 from rest_framework.response import Response
 from django.db.models.functions import Lower
 from django.db.models import Q
@@ -138,42 +139,52 @@ class SeatUserViewSet(viewsets.ModelViewSet):
     """
     Ejemplo URL:  http://localhost:8000/core/companies/pk/seats/pk/users
     List:
-    Este endpoint lista todos los usuarios de la sede.
-    Solo lista el modelo User, no lista los datos de CustomUser,
-    Sin embargo el metodo post de este endpoint llena ambos modelos
-    User y CustomUser.
+    Este endpoint gestiona usuarios de una sede.
 
     Para hacer el post correctamente se deben incluir los datos tanto de User
-    como CustomUser en el mismo JSON, ejemplo:
+    como CustomUser  y un campo adicional llamado "type" el cual
+    es el rol del usuario guardia o administrador ####(nombre de los roles sin definir todavia)###
 
+    JSON para post o put(en este caso modificando los campos que se van a cambiar), ejemplo:
+
+    <pre>
     {
-    "is_superuser": true/false,  # true si es un super usuario, false si no
     "username": "Test_username",  # Nombre de usuario, como una string
     "first_name": "test_name",  # Primer nombre del usuario, como una string
     "last_name": "test_lastname",  # Apellido del usuario, como una string
     "email": "testemail@testserver.test",  # E-mail del usuario
-    "is_staff": true/false,  # true si el usuario es staff, false si no
-    "is_active": true/false,  # true si el usuario está activo, false  si no
     "password": "testpassword",  # La contraseña del usuario, como una string
+    "type": "guard", # Tipo de usuario si es un guardia o es administrador (###nombre de grupos todavia no definidos#####)
     "dni": "test_dni"  # El número de identidad del usuario, como una string
     }
+    </pre>
+
+    El siguiente json lo uso para test (mientras estamos en desarrollo), porfavor no me lo borren...
+    <pre>
+    {
+    "is_superuser": false,
+    "username": "user2",
+    "first_name": "prp",
+    "last_name": "psps",
+    "email": "q@l.com",
+    "password": "testpassword",
+    "type": "guard",
+    "dni": "test_dni"
+    }
+    </pre>
 
     Para filtrar ser usa ?search=(contenido), se puede buscar por
     DNI, nombre de usario, correo, nombre o apellido.
-
-    para editar los datos del customUser ir al siguiente endpoint:
-
-    http://localhost:8000/core/companies/id/seats/id/users/id/custom/
     """
     queryset = User.objects.all().order_by(Lower('username'))
     permission_classes = (DRYPermissions,)
-    serializer_class = UserSerializerList
+    serializer_class = CustomUserSerializer
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ['username', 'email', 'dni']
 
     def queryAnnotate(self, users):
         users = users \
-                    .values('id', 'dni',) \
+                    .values('dni',) \
                     .annotate(last_login=F('user__last_login'),
                               is_superuser=F('user__is_superuser'),
                               username=F('user__username'),
@@ -182,7 +193,9 @@ class SeatUserViewSet(viewsets.ModelViewSet):
                               email=F('user__email'),
                               is_staff=F('user__is_staff'),
                               is_active=F('user__is_active'),
-                              date_joined=F('user__date_joined'))
+                              date_joined=F('user__date_joined'),
+                              type=F('user__groups'),
+                              id=F('user__id'))
         return users
 
     def list(self, request, company_pk, seat_pk):
@@ -191,7 +204,6 @@ class SeatUserViewSet(viewsets.ModelViewSet):
             seat__company=company_pk
             ).order_by(Lower('user__username'))
         users = self.queryAnnotate(queryset_list)
-        print(users)
         query = self.request.GET.get("search")
         if query:
             queryset_list = queryset_list.filter(
@@ -206,31 +218,90 @@ class SeatUserViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def create(self, request, company_pk, seat_pk):
-        serializer = UserSerializerList(data=request.data)
-        if serializer.is_valid():
+        data = request.data.copy()
+        data["is_superuser"] = False
+        data["is_staff"] = False
+        data["is_active"] = True
+        try:
+            data['type']
+        except KeyError:
+            return Response({"Error": "Falta tipo de usuario"}, status=status.HTTP_400_BAD_REQUEST)
+        serializer_user = UserSerializerList(data=data)
+        serializer_custom = CustomUserSerializer(data=data)
+        if serializer_custom.is_valid() and serializer_user.is_valid() and data["type"] != "Developer":
+            # Aqui verificamos la existencia de la sede, compañia y grupo
             seat = get_object_or_404(
                         Seat,
                         Q(id=seat_pk) &
                         Q(company=company_pk)
                         )
-            serializer.save()
-            id = serializer.data['id']
-            user = User.objects.get(pk=id)
-            request.data['user'] = user
-            request.data['address'] = None
-            customUser = CustomUser.objects.create_custom_user(request.data)
+            group = get_object_or_404(
+                        Group,
+                        name=data["type"]
+                        )
+            user = serializer_user.save()
+            data['user'] = user
+            customUser = CustomUser.objects.create_custom_user(data)
             SeatHasUser.objects.create(seat=seat, user=customUser)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            group.user_set.add(user)
+            return Response(request.data, status=status.HTTP_201_CREATED)
+        return Response({"Error": "Datos ingresados de forma incorrecta"}, status=status.HTTP_400_BAD_REQUEST)
 
     def retrieve(self, request, pk, company_pk, seat_pk):
         user = CustomUser.objects.filter(seat__company__id=company_pk,
-                                         seat__id=seat_pk, id=pk)
+                                         seat__id=seat_pk, user__id=pk)
         if (not len(user)):
             return Response(status=status.HTTP_404_NOT_FOUND)
         checks = self.queryAnnotate(user)
         serializer = UserSerializerListCustom(checks, many=True)
         return Response(serializer.data)
+
+    def destroy(self, request, pk, company_pk, seat_pk, **kwargs):
+        user = get_object_or_404(
+                    User,
+                    id=pk,
+                    )
+        custom = get_object_or_404(
+                    CustomUser,
+                    user=user.id,
+                    seat=seat_pk,
+                    seat__company=company_pk
+                    )
+        user.delete()
+        return Response({"Delete": "Done"}, status=status.HTTP_204_NO_CONTENT)
+
+    def update(self, request, pk, company_pk, seat_pk, **kwargs):
+        data = request.data.copy()
+        data["is_superuser"] = False
+        data["is_staff"] = False
+        data["is_active"] = True
+        try:
+            data['type']
+        except KeyError:
+            return Response({"Error": "Falta tipo de usuario"}, status=status.HTTP_400_BAD_REQUEST)
+        user = get_object_or_404(
+                    User,
+                    id=pk,
+                    )
+        custom = get_object_or_404(
+                    CustomUser,
+                    user=user.id,
+                    seat=seat_pk,
+                    seat__company=company_pk
+                    )
+        serializer_user = UserSerializerList(user, data=data)
+        serializer_custom = CustomUserSerializer(custom, data=data)
+        if serializer_user.is_valid() and serializer_custom.is_valid() and data["type"] != "Developer":
+            serializer_user.save()
+            serializer_custom.save()
+            if data["type"]=="":
+                return Response(serializer_user.data, status=status.HTTP_201_CREATED)
+            user.groups.clear()
+            group = get_object_or_404(Group, name=data["type"])
+            group.user_set.add(user)
+            return Response(serializer_user.data, status=status.HTTP_201_CREATED)
+        return Response({"Error": "Datos ingresados de forma incorrecta"}, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class SeatCustomUserDetail(generics.RetrieveUpdateDestroyAPIView):
@@ -369,6 +440,7 @@ class CompanyVisitor(viewsets.ModelViewSet):
     "first_name": "Test_name",  # Primer nombre, como una string
     "last_name": "Test_lastname",  # Segundo nombre, como una string
     "dni": "Test_dni",  # Número de identidad, como una string
+    'email': "email@company.com" # email del visitante
     "enabled": true/false  # true si está habilitado, false si no
     }
 
