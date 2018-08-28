@@ -15,7 +15,7 @@ class VisitorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Visitor
         fields = ('__all__')
-        read_only_fields = ('company', 'enabled')
+        read_only_fields = ('enabled',)
 
 
 class CompanySerializerList(serializers.ModelSerializer):
@@ -76,15 +76,13 @@ class UserSerializerList(serializers.ModelSerializer):
 class UserSerializerListCustom(serializers.Serializer):
     id = serializers.IntegerField()
     last_login = serializers.DateTimeField()
-    is_superuser = serializers.BooleanField(default=False)
     username = serializers.CharField(max_length=100)
     first_name = serializers.CharField(max_length=100)
     last_name = serializers.CharField(max_length=100)
-    is_staff = serializers.BooleanField(default=False)
-    is_active = serializers.BooleanField(default=False)
     date_joined = serializers.DateTimeField()
     dni = serializers.CharField(max_length=100)
     email = serializers.CharField(max_length=100)
+    type = serializers.CharField(max_length=10)
 
 
 class UserSerializerDetail(serializers.ModelSerializer):

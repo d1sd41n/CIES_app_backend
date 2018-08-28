@@ -30,9 +30,10 @@ class CustomUser(models.Model):
     objects = CustomUserManager()
 
     def __str__(self):
-        return '{0}: {1} {2}'.format(self.user.first_name,
-                                     self.user.last_name,
-                                     self.dni)
+        return '{0} - {1}: {2} {3}'.format(self.user.username,
+                                           self.user.first_name,
+                                           self.user.last_name,
+                                           self.dni)
 
     @staticmethod
     def has_read_permission(request):
@@ -246,6 +247,7 @@ class Visitor(models.Model):
     dni = models.CharField(max_length=30, unique=True)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     enabled = models.BooleanField(default=True)
+    email = models.EmailField(null=True)
     objects = VisitorManager()
 
     def has_read_permission(request):
