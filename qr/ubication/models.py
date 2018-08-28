@@ -1,13 +1,14 @@
-from .managers import (CountryManager, RegionManager,
-                       CityManager, LocationManager)
 from django.db import models
 from django.db.models import Q
+
+from .managers import (CityManager, CountryManager, LocationManager,
+                       RegionManager)
 
 
 class Country(models.Model):
     """se almacena el pais de ubicacion"""
     name = models.CharField(max_length=50, unique=True)
-    postalcode = models.CharField(unique=True, max_length=3,
+    postalcode = models.CharField(unique=True, max_length=15,
                                   null=True, blank=True)
     objects = CountryManager()
 
@@ -149,4 +150,4 @@ class Location(models.Model):
         return False
 
     def __str__(self):
-        return self.address+" "+str(self.city).capitalize()
+        return self.address + " " + str(self.city).capitalize()
