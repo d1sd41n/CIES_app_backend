@@ -38,7 +38,7 @@ class Country(models.Model):
         return self.name
 
 
-class Region(models.Model):
+class Province(models.Model):
     """Se almacena el estado, departamento o region
     """
     name = models.CharField(max_length=50)
@@ -73,7 +73,7 @@ class City(models.Model):
     """Se almacena ciudades o municipios
     """
     name = models.CharField(max_length=50)
-    region = models.ForeignKey(Region, on_delete=models.CASCADE)
+    province = models.ForeignKey(Province, on_delete=models.CASCADE)
     objects = CityManager()
 
     @staticmethod

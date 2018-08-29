@@ -1,75 +1,26 @@
 from rest_framework import serializers
-from .models import Country, Region, City, Location
+from .models import Country, Province, City, Location
 from django.db.models.functions import Lower
 
 
-class CountrySerializerList(serializers.ModelSerializer):
+class CountrySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Country
         fields = ('id', 'name', 'postalcode')
-        extra_kwargs = {'enabled': {'read_only': True}}
 
 
-class CountrySerializerDetail(serializers.ModelSerializer):
-    regions = serializers.SerializerMethodField()
+class ProvinceSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = Country
-        fields = ('id', 'name', 'postalcode', 'vat', 'regions')
-        extra_kwargs = {'enabled': {'read_only': True}}
-
-    def get_regions(self, obj):
-        query = obj.region_set.all().order_by(Lower('name'))
-        return RegionSerializerList(query, many=True).data
-
-
-class RegionSerializerDetail(serializers.ModelSerializer):
-    cities = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Region
-        fields = ('id', 'name', 'cities')
-        extra_kwargs = {'enabled': {'read_only': True}}
-
-    def get_cities(self, obj):
-        c_qs = City.objects.filter(region=obj).order_by(Lower('name'))
-        cities = CitySerializerList(c_qs, many=True).data
-        return cities
-
-
-class RegionSerializerList(serializers.ModelSerializer):
-
-    class Meta:
-        model = Region
+        model = Province
         fields = '__all__'
         extra_kwargs = {'enabled': {'read_only': True}}
 
 
-class CitySerializerList(serializers.ModelSerializer):
+class CitySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = City
         fields = '__all__'
-        extra_kwargs = {'enabled': {'read_only': True}}
-
-
-class CitySerializerDetail(serializers.ModelSerializer):
-    locations = serializers.SerializerMethodField()
-
-    class Meta:
-        model = City
-        fields = ('id', 'name', 'locations')
-        extra_kwargs = {'enabled': {'read_only': True}}
-
-    def get_locations(self, obj):
-        query = Location.objects.filter(city=obj)
-        location = LocationSerializerDetail(query, many=True).data
-        return location
-
-
-class LocationSerializerDetail(serializers.ModelSerializer):
-    class Meta:
-        model = Location
-        fields = ('id', 'address', 'latitude', 'longitude')
         extra_kwargs = {'enabled': {'read_only': True}}
