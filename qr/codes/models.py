@@ -1,8 +1,10 @@
-from codes.managers import CodeManager
-from core.models import Seat
+import uuid
+
 from django.db import models
 from django.db.models import Q
-import uuid
+
+from codes.managers import CodeManager
+from core.models import Seat
 
 
 class Code(models.Model):
@@ -25,7 +27,6 @@ class Code(models.Model):
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
         user_company = str(request.user.customuser.seathasuser.seat.company_id)
-        print(request.user)
         if group and user_company == parameters[0]:
             return True
         return False
@@ -46,7 +47,6 @@ class Code(models.Model):
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
         user_company = str(request.user.customuser.seathasuser.seat.company_id)
-        print(request.user)
         if group and user_company == parameters[0]:
             return True
         return False
