@@ -91,7 +91,7 @@ class GenerateCodes(APIView):
         return Response(status=status.HTTP_403_FORBIDDEN)
 
     def get(self, request, company_pk, seat_pk):
-        return Response("GET Method isn't allowed in this endpoint", status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        return Response("El método GET no está soportado", status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def post(self, request, company_pk, seat_pk):
         """
@@ -107,6 +107,8 @@ class GenerateCodes(APIView):
             )
             serializer.save()
             pages = serializer.data['pages']
+            if pages > 4:
+                return Response("El máximo de páginas a crear a la vez es de 4 páginas", status=status.HTTP_400_BAD_REQUEST)
             seat = Seat.objects.get(pk=seat_pk)
             response = HttpResponse(content_type='application/pdf')
             response['Content-Disposition'] = 'attachment; filename="codes page.pdf"'
