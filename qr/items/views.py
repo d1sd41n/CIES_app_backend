@@ -1,33 +1,17 @@
-from rest_framework import generics
-from rest_framework import viewsets
-from rest_framework.response import Response
+from django.db.models import F, Q
 from django.db.models.functions import Lower
-from django.db.models import Q
 from django.shortcuts import get_object_or_404
-from rest_framework import status
-from dry_rest_permissions.generics import DRYPermissions
+from rest_framework import generics, status, viewsets
+from rest_framework.filters import SearchFilter
+from rest_framework.response import Response
+
 from core.models import Seat
-from django.db.models import F
-from rest_framework.filters import (
-    SearchFilter,
-)
-from items.models import (
-    TypeItem,
-    Brand,
-    Item,
-    LostItem,
-    CheckIn,
-)
-from items.serializers import (
-    ItemSerializer,
-    ChekinSerializer,
-    TypeItemSerializer,
-    BrandSerializer,
-    RegisterItem,
-    LostItemCreateSerializer,
-    LostItemSerializer,
-    CheckInCreateSerializer,
-)
+from dry_rest_permissions.generics import DRYPermissions
+from items.models import Brand, CheckIn, Item, LostItem, TypeItem
+from items.serializers import (BrandSerializer, CheckInCreateSerializer,
+                               ChekinSerializer, ItemSerializer,
+                               LostItemCreateSerializer, LostItemSerializer,
+                               RegisterItem, TypeItemSerializer)
 
 
 class CheckInViewSet(viewsets.ModelViewSet):
@@ -57,14 +41,14 @@ class CheckInViewSet(viewsets.ModelViewSet):
 
     def queryAnnotate(self, checks):
         checks = checks \
-                    .values('id', 'item', 'date', 'go_in') \
-                    .annotate(seat_id=F('seat__id'),
-                              seat_dir=F('seat__address__address'),
-                              owner_last_name=F('item__owner__last_name'),
-                              owner_dni=F('item__owner__dni'),
-                              type_item=F('item__type_item__kind'),
-                              owner_name=F('item__owner__first_name'),
-                              lost=F('item__lost'),)
+            .values('id', 'item', 'date', 'go_in') \
+            .annotate(seat_id=F('seat__id'),
+                      seat_dir=F('seat__address__address'),
+                      owner_last_name=F('item__owner__last_name'),
+                      owner_dni=F('item__owner__dni'),
+                      type_item=F('item__type_item__kind'),
+                      owner_name=F('item__owner__first_name'),
+                      lost=F('item__lost'),)
         return checks
 
     def list(self, request, company_pk, seat_pk):
@@ -73,8 +57,8 @@ class CheckInViewSet(viewsets.ModelViewSet):
         query = self.request.GET.get("last_name")
         if query:
             queryset_list = queryset_list.filter(
-                        Q(item__owner__dni__icontains=query)
-                        ).distinct()
+                Q(item__owner__dni__icontains=query)
+            ).distinct()
             serializer = VisitorSerializer(queryset_list, many=True)
             return Response(serializer.data)
         checks = self.queryAnnotate(checks)
@@ -124,11 +108,11 @@ class RegisterItemViewSet(generics.CreateAPIView):
             return Response('El ingreso no se realizó en esta sede',
                             status=status.HTTP_400_BAD_REQUEST)
         r_queryset = get_object_or_404(
-                                       Seat,
-                                       id=seat_pk,
-                                       company=company_pk,
-                                       enabled=True
-                                       )
+            Seat,
+            id=seat_pk,
+            company=company_pk,
+            enabled=True
+        )
         serializer = RegisterItem(data=data)
         if serializer.is_valid():
             serializer.save(registered_by=request.user, enabled=True)
@@ -166,17 +150,17 @@ class ItemViewSet(viewsets.ReadOnlyModelViewSet):
 
     def queryAnnotate(self, items):
         items = items \
-                    .values('id', 'reference', 'description', 'lost', 'color',
-                            'registration_date', 'registered_by') \
-                    .annotate(type_item=F('type_item__kind'),
-                              owner_name=F('owner__first_name'),
-                              owner_last_name=F('owner__last_name'),
-                              owner_dni=F('owner__dni'),
-                              brand=F('brand__brand'),
-                              registered_in_seat=F('seat_registration__name'),
-                              registered_in_seat_id=F('seat_registration'),
-                              company_id=F('seat_registration__company'),
-                              code=F('code__code'))
+            .values('id', 'reference', 'description', 'lost', 'color',
+                    'registration_date', 'registered_by') \
+            .annotate(type_item=F('type_item__kind'),
+                      owner_name=F('owner__first_name'),
+                      owner_last_name=F('owner__last_name'),
+                      owner_dni=F('owner__dni'),
+                      brand=F('brand__brand'),
+                      registered_in_seat=F('seat_registration__name'),
+                      registered_in_seat_id=F('seat_registration'),
+                      company_id=F('seat_registration__company'),
+                      code=F('code__code'))
         return items
 
     def list(self, request, company_pk):
@@ -185,12 +169,12 @@ class ItemViewSet(viewsets.ReadOnlyModelViewSet):
         query = self.request.GET.get("search")
         if query:
             items = items.filter(
-                        Q(owner__dni__iexact=query) |
-                        Q(type_item__kind__iexact=query) |
-                        Q(owner__first_name__iexact=query) |
-                        Q(owner__last_name__iexact=query) |
-                        Q(brand__brand__iexact=query)
-                        ).distinct()
+                Q(owner__dni__iexact=query) |
+                Q(type_item__kind__iexact=query) |
+                Q(owner__first_name__iexact=query) |
+                Q(owner__last_name__iexact=query) |
+                Q(brand__brand__iexact=query)
+            ).distinct()
         items = self.queryAnnotate(items)
         serializer = ItemSerializer(items, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -229,29 +213,28 @@ class CompanyTypeItem(viewsets.ModelViewSet):
         queryset_list = TypeItem.objects.filter(
             company=company_pk,
             enabled=True
-            ).order_by(
-                Lower('kind')
-            )
+        ).order_by(
+            Lower('kind')
+        )
         query = self.request.GET.get("search")
         if query:
             queryset_list = queryset_list.filter(
-                        Q(kind__icontains=query)
-                        ).distinct()
+                Q(kind__icontains=query)
+            ).distinct()
         serializer = TypeItemSerializer(queryset_list, many=True)
         return Response(serializer.data)
 
     def retrieve(self, request, pk, company_pk):
         r_queryset = get_object_or_404(
-                    TypeItem,
-                    id=pk,
-                    company=company_pk,
-                    enabled=True
-                    )
+            TypeItem,
+            id=pk,
+            company=company_pk,
+            enabled=True
+        )
         serializer = TypeItemSerializer(r_queryset)
         return Response(serializer.data)
 
     def create(self, request, company_pk):
-        print(request.data)
         data = request.data.copy()
         data["company"] = company_pk
         serializer = TypeItemSerializer(data=data)
@@ -287,35 +270,35 @@ class BrandItem(viewsets.ModelViewSet):
             type_item__company=company_pk,
             type_item=typeitem_pk,
             enabled=True
-            ).order_by(
-                Lower('brand')
-            )
+        ).order_by(
+            Lower('brand')
+        )
         query = self.request.GET.get("search")
         if query:
             queryset_list = queryset_list.filter(
-                        Q(brand__icontains=query)
-                        ).distinct()
+                Q(brand__icontains=query)
+            ).distinct()
         serializer = BrandSerializer(queryset_list, many=True)
         return Response(serializer.data)
 
     def retrieve(self, request, pk, company_pk, typeitem_pk):
         r_queryset = get_object_or_404(
-                    Brand,
-                    id=pk,
-                    type_item__company=company_pk,
-                    type_item=typeitem_pk,
-                    enabled=True
-                    )
+            Brand,
+            id=pk,
+            type_item__company=company_pk,
+            type_item=typeitem_pk,
+            enabled=True
+        )
         serializer = BrandSerializer(r_queryset)
         return Response(serializer.data)
 
     def create(self, request, company_pk, typeitem_pk):
         validator = get_object_or_404(
-                                        TypeItem,
-                                        company=company_pk,
-                                        pk=typeitem_pk,
-                                        enabled=True
-                                        )
+            TypeItem,
+            company=company_pk,
+            pk=typeitem_pk,
+            enabled=True
+        )
         data = request.data.copy()
         data["type_item"] = typeitem_pk
         serializer = BrandSerializer(data=data)
@@ -349,22 +332,19 @@ class LostItemView(viewsets.ModelViewSet):
     filter_backends = [SearchFilter]
     search_fields = ['owner_dni']
 
-    # def create(self, request, company_pk):
-    #     print(request.data)
-
     def queryAnnotate(self, items):
         lostitems = items \
-                    .values('id', 'date', 'description', 'email',
-                            'visitor_phone', 'closed_case') \
-                    .annotate(item_reference=F('item__reference'),
-                              item_color=F('item__color'),
-                              type_item=F('item__type_item__kind'),
-                              owner_dni=F('item__owner__dni'),
-                              item_brand=F('item__brand__brand'),
-                              owner_name=F('item__owner__first_name'),
-                              owner_last_name=F('item__owner__last_name'),
-                              lost_in_seat_id=F('seat__id'),
-                              lost_in_seat=F('seat__name'))
+            .values('id', 'date', 'description', 'email',
+                    'visitor_phone', 'closed_case') \
+            .annotate(item_reference=F('item__reference'),
+                      item_color=F('item__color'),
+                      type_item=F('item__type_item__kind'),
+                      owner_dni=F('item__owner__dni'),
+                      item_brand=F('item__brand__brand'),
+                      owner_name=F('item__owner__first_name'),
+                      owner_last_name=F('item__owner__last_name'),
+                      lost_in_seat_id=F('seat__id'),
+                      lost_in_seat=F('seat__name'))
         return lostitems
 
     def list(self, request, company_pk):
@@ -373,10 +353,10 @@ class LostItemView(viewsets.ModelViewSet):
         query = self.request.GET.get("search")
         if query:
             lost_items = lost_items.filter(
-                        Q(item__owner__dni__iexact=query) |
-                        Q(item__brand__brand=query) |
-                        Q(item__type_item__kind=query)
-                        ).distinct()
+                Q(item__owner__dni__iexact=query) |
+                Q(item__brand__brand=query) |
+                Q(item__type_item__kind=query)
+            ).distinct()
         lost_items = self.queryAnnotate(lost_items)
         serializer = LostItemSerializer(lost_items, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

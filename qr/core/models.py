@@ -1,17 +1,14 @@
-from core.managers import (
-                            CustomUserManager,
-                            CompanyManager,
-                            SeatManager,
-                            VisitorManager,
-                            )
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models
 from django.db.models import Q
-from ubication.models import Location
-from django.conf import settings
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
+
+from core.managers import (CompanyManager, CustomUserManager, SeatManager,
+                           VisitorManager)
+from ubication.models import Location
 
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
@@ -87,7 +84,6 @@ class UserPermissions(User):
                                            Q(name="Security Boss"))
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
-        print(request.user.customuser.seat_set)
         user_company = str(request.user.customuser.seathasuser.seat.company_id)
         user_seat = str(request.user.customuser.seathasuser.seat_id)
         if (group and user_company == parameters[0]
