@@ -55,10 +55,49 @@ class CompanyCodes(viewsets.ReadOnlyModelViewSet):
 
 
 class GenerateCodes(APIView):
-    # permission_classes = (DRYPermissions,)
+    """
+    En este endpoint se generan páginas de códigos QR,
+    como parámetro se ingresa la cantidad de páginas a generar
+    {
+    "pages": 1
+    }"""
     serializer_class = GenerateCodesSerializer
 
+    def permissions(self, request, response, buffer, p, code_list):
+        """
+        Ya que es sólo una vista la que necesita estos
+        permisos se harán de esta manera y no usando los de DRF."""
+
+        developer_permission = request.user.groups.filter(
+            Q(name="Developer"))
+        if developer_permission:
+            Code.objects.bulk_create(code_list)
+            p.save()
+            pdf = buffer.getvalue()
+            buffer.close()
+            response.write(pdf)
+            return response
+        group = request.user.groups.filter(Q(name="Manager") |
+                                           Q(name="Security Boss"))
+        parameters = [parameter for parameter in request.path_info
+                      if parameter.isdigit()]
+        if group == parameters[0]:
+            Code.objects.bulk_create(code_list)
+            p.save()
+            pdf = buffer.getvalue()
+            buffer.close()
+            response.write(pdf)
+            return response
+        return Response(status=status.HTTP_403_FORBIDDEN)
+
+    def get(self, request, company_pk, seat_pk):
+        return Response("El método GET no está soportado", status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
     def post(self, request, company_pk, seat_pk):
+        """
+        Debido a que esta view no es del tipo ModelViewSet debe tener
+        permisos específicos."""
+
         serializer = GenerateCodesSerializer(data=request.data)
         if serializer.is_valid():
             seat = get_object_or_404(
@@ -68,6 +107,8 @@ class GenerateCodes(APIView):
             )
             serializer.save()
             pages = serializer.data['pages']
+            if pages > 4:
+                return Response("El máximo de páginas a crear a la vez es de 4 páginas", status=status.HTTP_400_BAD_REQUEST)
             seat = Seat.objects.get(pk=seat_pk)
             response = HttpResponse(content_type='application/pdf')
             response['Content-Disposition'] = 'attachment; filename="codes page.pdf"'
@@ -88,10 +129,5 @@ class GenerateCodes(APIView):
                                           width=50,
                                           height=50)
                 p.showPage()
-            Code.objects.bulk_create(code_list)
-            p.save()
-            pdf = buffer.getvalue()
-            buffer.close()
-            response.write(pdf)
-            return response
+            return self.permissions(request, response, buffer, p, code_list)
         return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
