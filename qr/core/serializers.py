@@ -18,34 +18,15 @@ class VisitorSerializer(serializers.ModelSerializer):
         read_only_fields = ('enabled',)
 
 
-class CompanySerializerList(serializers.ModelSerializer):
+class CompanySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Company
         fields = ('id', 'nit', 'name', 'email', 'website')
         extra_kwargs = {'enabled': {'read_only': True}}
 
-    def get_seats(self, obj):
-        c_qs = Seat.objects.filter(company=obj).order_by(Lower('name'))
-        seats = SeatSerializerList(c_qs, many=True).data
-        return seats
 
-
-class SeatSerializerList(serializers.ModelSerializer):
-
-    class Meta:
-        model = Seat
-        fields = ('id',
-                  'name',
-                  'address',
-                  'email',
-                  'company',
-                  'enabled')
-
-        read_only_fields = ('company', 'enabled')
-
-
-class SeatSerializerDetail(serializers.ModelSerializer):
+class SeatSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Seat

@@ -176,9 +176,6 @@ class Seat(models.Model):
     email = models.EmailField(blank=True)
     name = models.CharField(max_length=100, unique=True)
     enabled = models.BooleanField(default=True)
-    users = models.ManyToManyField(CustomUser,
-                                   through='SeatHasUser',
-                                   through_fields=('seat', 'user'))
     objects = SeatManager()
 
     @staticmethod
@@ -219,22 +216,6 @@ class Seat(models.Model):
 
     def __str__(self):
         return self.name
-
-
-class SeatHasUser(models.Model):
-    """Tabla intermedia entre usuarios y sedes
-    """
-    seat = models.ForeignKey(Seat, on_delete=models.CASCADE)
-    user = models.OneToOneField(CustomUser,
-                                on_delete=models.CASCADE,
-                                unique=True)
-
-    class Meta:
-        verbose_name_plural = "SeatsHaveUsers"
-
-    def __str__(self):
-        return "{0} : {1}".format(str(self.seat).capitalize(),
-                                  str(self.user).capitalize())
 
 
 class Visitor(models.Model):

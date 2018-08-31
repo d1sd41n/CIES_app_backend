@@ -15,16 +15,14 @@ from core.models import (
     Seat,
     CustomUser,
     Visitor,
-    SeatHasUser,
 )
 from rest_framework.filters import (
     SearchFilter,
     OrderingFilter,
 )
 from core.serializers import (
-    CompanySerializerList,
-    SeatSerializerList,
-    SeatSerializerDetail,
+    CompanySerializer,
+    SeatSerializer,
     UserSerializerList,
     UserSerializerDetail,
     CustomUserSerializer,
@@ -40,12 +38,23 @@ class auxViewSet(viewsets.ViewSet):
     como items/company o items/compani/id/seats,
     aqui no se mostrará absolutamente nada"""
     queryset = Company.objects.all()
-    serializer_class = CompanySerializerList
+    serializer_class = CompanySerializer
 
 
 class CompanyViewSet(viewsets.ModelViewSet):
     """
     Ejemplo URL:  http://localhost:8000/core/companies
+
+    create:
+    ejemplo de json para crear una compañia
+    <pre>
+    {
+    "nit": "723",
+    "name": "company1",
+    "email": "qd@p.com",
+    "website": "https://www.company.com"
+    }
+    </pre>
 
     Si se consultan todas las compañías:
     El EndPoint listará todas las compañias en la BD,
@@ -57,7 +66,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
     específica"""
     permission_classes = (DRYPermissions,)
     queryset = Company.objects.all().order_by(Lower('name'))
-    serializer_class = CompanySerializerList
+    serializer_class = CompanySerializer
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ['nit', 'name']
 
@@ -71,9 +80,9 @@ class CompanyViewSet(viewsets.ModelViewSet):
                         Q(name__icontains=query) |
                         Q(nit__icontains=query)
                         ).distinct()
-            serializer = CompanySerializerList(queryset_list, many=True)
+            serializer = CompanySerializer(queryset_list, many=True)
             return Response(serializer.data)
-        serializer = CompanySerializerList(queryset_list, many=True)
+        serializer = CompanySerializer(queryset_list, many=True)
         return Response(serializer.data)
 
     def retrieve(self, request, pk):
@@ -82,7 +91,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
                     id=pk,
                     enabled=True
                     )
-        serializer = CompanySerializerList(r_queryset)
+        serializer = CompanySerializer(r_queryset)
         return Response(serializer.data)
 
 
@@ -102,10 +111,12 @@ class SeatViewSet(viewsets.ModelViewSet):
     """
 
     queryset = Seat.objects.all().order_by(Lower('name'))
-    serializer_class = SeatSerializerList
+    serializer_class = SeatSerializer
     permission_classes = (DRYPermissions,)
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ['name']
+
+    #def create(self, request, company_pk, seat_pk):
 
     def list(self, request, company_pk):
         queryset_list = Seat.objects.filter(
@@ -119,9 +130,9 @@ class SeatViewSet(viewsets.ModelViewSet):
             queryset_list = queryset_list.filter(
                         Q(name__icontains=query)
                         ).distinct()
-            serializer = SeatSerializerList(queryset_list, many=True)
+            serializer = SeatSerializer(queryset_list, many=True)
             return Response(serializer.data)
-        serializer = SeatSerializerList(queryset_list, many=True)
+        serializer = SeatSerializer(queryset_list, many=True)
         return Response(serializer.data)
 
     def retrieve(self, request, pk, company_pk):
@@ -131,7 +142,7 @@ class SeatViewSet(viewsets.ModelViewSet):
                     company=company_pk,
                     enabled=True
                     )
-        serializer = SeatSerializerDetail(r_queryset)
+        serializer = SeatSerializer(r_queryset)
         return Response(serializer.data)
 
 
