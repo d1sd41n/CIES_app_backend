@@ -1,5 +1,6 @@
 from rest_framework import generics
 from rest_framework import viewsets
+from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.models import Group
 from rest_framework.response import Response
 from django.db.models.functions import Lower
@@ -10,6 +11,7 @@ from django.contrib.auth.models import User
 from dry_rest_permissions.generics import DRYPermissions
 from rest_framework import status
 from ubication.models import Location
+from ubication.serializers import LocationSerializer
 from core.models import (
     Company,
     Seat,
@@ -23,6 +25,7 @@ from rest_framework.filters import (
 from core.serializers import (
     CompanySerializer,
     SeatSerializer,
+    SeatSerializerList,
     UserSerializerList,
     UserSerializerDetail,
     CustomUserSerializer,
@@ -99,15 +102,25 @@ class SeatViewSet(viewsets.ModelViewSet):
     """
     Ejemplo URL: http://localhost:8000/core/companies/pk/seats
 
+    ejemplo de JSON:
+
+    -create: se deben añadir campos basicos de sede, el id de la ciudad
+    donde esta ubicada la cede y la direccion de la sede. La compañia se añade
+    automaticamente basandose en la jerarquia.
+    ejemplo:
+    <pre>
+    {
+    "email": "qww@email.com",
+    "name": "sede1",
+    "address": "calle 3 carrera 7",
+    "city": 1
+    }
+    </pre>
+
     -List: Lista todas las sedes de la compañia,
     cuando se hace un post para crear una sede no se debe especificar
     la compañia, el post automaticamente agrega la compañia en la cual se
     esta creando la sede.
-    El address de la sede se agrega en otro endpoint.
-    Para filtrar por el campo name  /?search=(name).
-    -Detail: muestra los detalles de una sede, permite editarla y eliminarla,
-
-    se filtra con el nombre de la sede
     """
 
     queryset = Seat.objects.all().order_by(Lower('name'))
@@ -116,7 +129,33 @@ class SeatViewSet(viewsets.ModelViewSet):
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ['name']
 
-    #def create(self, request, company_pk, seat_pk):
+    def queryAnnotate(self, seats):
+        seats = seats \
+                    .values('id','email','name') \
+                    .annotate(address=F('address__address'),
+                              company=F('company__name'))
+        return seats
+
+    def create(self, request, company_pk):
+        data = request.data.copy()
+        data['company'] = company_pk
+        try:
+            Company.objects.get(id=company_pk)
+        except ObjectDoesNotExist:
+            return Response({"Error": "compañia incorrecta"}, status=status.HTTP_400_BAD_REQUEST)
+        serializer_seat = SeatSerializer(data=data)
+        serializer_address = LocationSerializer(data=data)
+        if serializer_address.is_valid():
+            adress = serializer_address.save()
+            data["address"] = adress.id
+            if serializer_seat.is_valid():
+                serializer_seat.save()
+                return Response(request.data, status=status.HTTP_201_CREATED)
+            else:
+                adress.delete()
+                return Response(serializer_seat.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(serializer_address.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def list(self, request, company_pk):
         queryset_list = Seat.objects.filter(
@@ -125,25 +164,40 @@ class SeatViewSet(viewsets.ModelViewSet):
             ).order_by(
                 Lower('name')
             )
-        query = self.request.GET.get("search")
-        if query:
-            queryset_list = queryset_list.filter(
-                        Q(name__icontains=query)
-                        ).distinct()
-            serializer = SeatSerializer(queryset_list, many=True)
-            return Response(serializer.data)
-        serializer = SeatSerializer(queryset_list, many=True)
+        seats = self.queryAnnotate(queryset_list)
+        serializer = SeatSerializerList(seats, many=True)
         return Response(serializer.data)
 
     def retrieve(self, request, pk, company_pk):
-        r_queryset = get_object_or_404(
+        seat = Seat.objects.filter(company__id=company_pk, id=pk)
+        if (not len(seat)):
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        seat = self.queryAnnotate(seat)
+        serializer = SeatSerializerList(seat, many=True)
+        return Response(serializer.data)
+
+    def update(self, request, pk, company_pk, **kwargs):
+        data = request.data.copy()
+        data['company'] = company_pk
+        seat = get_object_or_404(
                     Seat,
                     id=pk,
-                    company=company_pk,
-                    enabled=True
+                    company=company_pk
                     )
-        serializer = SeatSerializer(r_queryset)
-        return Response(serializer.data)
+        location = get_object_or_404(
+                    Location,
+                    id=seat.address.id
+                    )
+        address = data['address']
+        data['address'] = seat.address.id
+        serializer_seat = SeatSerializer(seat, data=data)
+        if serializer_seat.is_valid():
+            location.address = address
+            location.save()
+            serializer_seat.save()
+            return Response(request.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer_seat.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class SeatUserViewSet(viewsets.ModelViewSet):
@@ -173,10 +227,9 @@ class SeatUserViewSet(viewsets.ModelViewSet):
     El siguiente json lo uso para test (mientras estamos en desarrollo), porfavor no me lo borren...
     <pre>
     {
-    "is_superuser": false,
     "username": "user2",
-    "first_name": "prp",
-    "last_name": "psps",
+    "first_name": "name",
+    "last_name": "lastname",
     "email": "q@l.com",
     "password": "testpassword",
     "type": "guard",
@@ -215,16 +268,6 @@ class SeatUserViewSet(viewsets.ModelViewSet):
             seat__company=company_pk
             ).order_by(Lower('user__username'))
         users = self.queryAnnotate(queryset_list)
-        query = self.request.GET.get("search")
-        if query:
-            queryset_list = queryset_list.filter(
-                        Q(user__username__icontains=query) |
-                        Q(user__first_name__icontains=query) |
-                        Q(user__last_name__icontains=query) |
-                        Q(user__email__icontains=query) |
-                        Q(dni__icontains=query)
-                        ).distinct()
-        users = self.queryAnnotate(queryset_list)
         serializer = UserSerializerListCustom(users, many=True)
         return Response(serializer.data)
 
@@ -233,30 +276,43 @@ class SeatUserViewSet(viewsets.ModelViewSet):
         data["is_superuser"] = False
         data["is_staff"] = False
         data["is_active"] = True
+        data["seat"] = seat_pk
+
+
+        # verificasion de campos externos
         try:
             data['type']
         except KeyError:
-            return Response({"Error": "Falta tipo de usuario"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Error": "falta el campo type"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            group = Group.objects.get(name=data["type"])
+        except ObjectDoesNotExist:
+            return Response({"Error": "el campo type es incorrecto"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            Seat.objects.get(id=seat_pk, company__id=company_pk)
+        except ObjectDoesNotExist:
+            return Response({"Error": "sede incorrecta"}, status=status.HTTP_400_BAD_REQUEST)
+        if data["type"] == "Developer":
+            return Response({"Error": "Tipo de usuario no permitido"}, status=status.HTTP_400_BAD_REQUEST)
+
+
         serializer_user = UserSerializerList(data=data)
         serializer_custom = CustomUserSerializer(data=data)
-        if serializer_custom.is_valid() and serializer_user.is_valid() and data["type"] != "Developer":
-            # Aqui verificamos la existencia de la sede, compañia y grupo
-            seat = get_object_or_404(
-                        Seat,
-                        Q(id=seat_pk) &
-                        Q(company=company_pk)
-                        )
-            group = get_object_or_404(
-                        Group,
-                        name=data["type"]
-                        )
+        if serializer_user.is_valid():
             user = serializer_user.save()
-            data['user'] = user
-            customUser = CustomUser.objects.create_custom_user(data)
-            SeatHasUser.objects.create(seat=seat, user=customUser)
-            group.user_set.add(user)
-            return Response(request.data, status=status.HTTP_201_CREATED)
-        return Response({"Error": "Datos ingresados de forma incorrecta"}, status=status.HTTP_400_BAD_REQUEST)
+            data['user'] = user.id
+            if serializer_custom.is_valid():
+                customUser = serializer_custom.save()
+                group.user_set.add(user)
+                data = request.data.copy()
+                data.pop("password")
+                return Response(data, status=status.HTTP_201_CREATED)
+            else:
+                user.delete()
+                return Response(serializer_custom.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(serializer_user.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
     def retrieve(self, request, pk, company_pk, seat_pk):
         user = CustomUser.objects.filter(seat__company__id=company_pk,
@@ -283,160 +339,52 @@ class SeatUserViewSet(viewsets.ModelViewSet):
 
     def update(self, request, pk, company_pk, seat_pk, **kwargs):
         data = request.data.copy()
-        data["is_superuser"] = False
-        data["is_staff"] = False
-        data["is_active"] = True
+        # validadores
+        if data["type"] == "Developer":
+            return Response({"Error": "Tipo de usuario no permitido"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            group = Group.objects.get(name=data["type"])
+        except ObjectDoesNotExist:
+            return Response({"Error": "el campo type es incorrecto"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            Seat.objects.get(id=seat_pk, company__id=company_pk)
+        except ObjectDoesNotExist:
+            return Response({"Error": "sede incorrecta"}, status=status.HTTP_400_BAD_REQUEST)
         try:
             data['type']
         except KeyError:
             return Response({"Error": "Falta tipo de usuario"}, status=status.HTTP_400_BAD_REQUEST)
-        user = get_object_or_404(
-                    User,
-                    id=pk,
-                    )
-        custom = get_object_or_404(
-                    CustomUser,
-                    user=user.id,
-                    seat=seat_pk,
-                    seat__company=company_pk
-                    )
+        try:
+            user = User.objects.get(id=pk)
+        except ObjectDoesNotExist:
+            return Response({"Error": "User incorrecto"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            custom = CustomUser.objects.get(user=user.id, seat=seat_pk, seat__company=company_pk)
+        except ObjectDoesNotExist:
+            return Response({"Error": "No se pudo encontrar el Customuser del user"}, status=status.HTTP_400_BAD_REQUEST)
+
+        data["is_superuser"] = False
+        data["is_staff"] = False
+        data["is_active"] = True
+        data["seat"] = seat_pk
+        data['user'] = user.id
         serializer_user = UserSerializerList(user, data=data)
         serializer_custom = CustomUserSerializer(custom, data=data)
-        if serializer_user.is_valid() and serializer_custom.is_valid() and data["type"] != "Developer":
-            serializer_user.save()
-            serializer_custom.save()
-            if data["type"]=="":
-                return Response(serializer_user.data, status=status.HTTP_201_CREATED)
-            user.groups.clear()
-            group = get_object_or_404(Group, name=data["type"])
-            group.user_set.add(user)
-            return Response(serializer_user.data, status=status.HTTP_201_CREATED)
-        return Response({"Error": "Datos ingresados de forma incorrecta"}, status=status.HTTP_400_BAD_REQUEST)
+        if serializer_user.is_valid(): #and serializer_custom.is_valid():
+            if serializer_custom.is_valid():
+                serializer_user.save()
+                serializer_custom.save()
+                user.groups.clear()
+                group.user_set.add(user)
+                # data = request.data.copy()
+                # data.pop("password")
+                return Response(data, status=status.HTTP_201_CREATED)
+            else:
+                return Response(serializer_custom.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(serializer_user.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-
-class SeatCustomUserDetail(generics.RetrieveUpdateDestroyAPIView):
-    """Muestra los datos de customUser de determinado usuario,
-    tambien desde aqui se puede editar."""
-    permission_classes = (DRYPermissions,)
-    queryset = CustomUser.objects.all()
-    serializer_class = CustomUserSerializer
-
-    def retrieve(self, request, company_pk, seat_pk, user_pk):
-        r_queryset = get_object_or_404(
-                    CustomUser,
-                    user=user_pk,
-                    seat=seat_pk,
-                    seat__company=company_pk
-                    )
-        serializer = CustomUserSerializer(r_queryset)
-        return Response(serializer.data)
-
-    def put(self, request, company_pk, seat_pk, user_pk):
-        custom = get_object_or_404(
-                    CustomUser,
-                    user=user_pk,
-                    seat=seat_pk,
-                    seat__company=company_pk
-                    )
-        serializer = CustomUserSerializer(custom, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def patch(self, request, company_pk, seat_pk, user_pk):
-        custom = get_object_or_404(
-                    CustomUser,
-                    user=user_pk,
-                    seat=seat_pk,
-                    seat__company=company_pk
-                    )
-        serializer = CustomUserSerializer(custom, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class SeatAddress(generics.RetrieveUpdateDestroyAPIView,
-                  generics.CreateAPIView):
-    """En esta Api se inserta, consulta, edita y elimina la
-    dirección de determinada sede de la compañía,
-    al crearse la sede no se crea una address por lo cual este campo
-    queda vacío y se debe llenar por este EndPoint,
-    si ya existe una dirección y se vuelve a insertar otra,
-    esta nueva reemplazará la anterior sin eliminarla de la BD.
-
-    En el metodo GET no se realiza una consulta directa a Locations para
-    permitir mostrar dos mensajes diferentes, uno en caso que la jerarquía
-    este incorrecta y otro en caso de que la sede aún no tenga dirección.
-
-    Al hacer post se debe mandar el Id de la ciudad en la cual va a
-    estar la dirección ejemplo  "city": 1"""
-    permission_classes = (DRYPermissions,)
-    queryset = Location.objects.all()
-    serializer_class = AddressSerializer
-
-    def retrieve(self, request, company_pk, seat_pk):
-        queryset = get_object_or_404(
-                    Seat,
-                    id=seat_pk,
-                    company=company_pk
-                    ).address
-        if(queryset is None):
-            return Response({'address': 'This seat does not have address :('},
-                            status=status.HTTP_404_NOT_FOUND)
-        serializer = AddressSerializer(queryset)
-        return Response(serializer.data)
-
-    def post(self, request, company_pk, seat_pk):
-        serializer = AddressSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            id = serializer.data['id']
-            seat = get_object_or_404(
-                        Seat,
-                        id=seat_pk,
-                        company=company_pk
-                        )
-            seat.address = Location.objects.get(id=id)
-            seat.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def put(self, request, company_pk, seat_pk):
-        address = get_object_or_404(
-                    Location,
-                    seat=seat_pk,
-                    seat__company=company_pk
-                    )
-        serializer = AddressSerializer(address, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def patch(self, request, company_pk, seat_pk):
-        address = get_object_or_404(
-                    Location,
-                    seat=seat_pk,
-                    seat__company=company_pk
-                    )
-        serializer = AddressSerializer(address, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request,  company_pk, seat_pk):
-        address = get_object_or_404(
-                    Location,
-                    seat__company=company_pk,
-                    seat=seat_pk
-                    )
-        address.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class CompanyVisitor(viewsets.ModelViewSet):

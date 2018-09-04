@@ -22,6 +22,4 @@ urlpatterns = [
     url(r'^', include(seat_router.urls)),
     url(r'^', include(user_router.urls)),
     url(r'^', include(visitor_router.urls)),
-    url(r'^companies/(?P<company_pk>\d+)/seats/(?P<seat_pk>\d+)/address/$', views.SeatAddress.as_view(), name='SeatAddress'),
-    url(r'^companies/(?P<company_pk>\d+)/seats/(?P<seat_pk>\d+)/users/(?P<user_pk>\d+)/custom/$', views.SeatCustomUserDetail.as_view(), name='SeatUserList'),
 ]

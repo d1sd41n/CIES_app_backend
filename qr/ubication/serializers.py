@@ -24,3 +24,10 @@ class CitySerializer(serializers.ModelSerializer):
         model = City
         fields = '__all__'
         extra_kwargs = {'enabled': {'read_only': True}}
+
+class LocationSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Location
+        fields = '__all__'
+        extra_kwargs = {'enabled': {'read_only': True}}

@@ -17,103 +17,6 @@ def create_auth_token(sender, instance=None, created=False, **kwargs):
         Token.objects.create(user=instance)
 
 
-class CustomUser(models.Model):
-    """
-    Usuario extendido del user de django
-    """
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    dni = models.CharField(max_length=30, unique=True)
-    enabled = models.BooleanField(default=True)
-    objects = CustomUserManager()
-
-    def __str__(self):
-        return '{0} - {1}: {2} {3}'.format(self.user.username,
-                                           self.user.first_name,
-                                           self.user.last_name,
-                                           self.dni)
-
-    @staticmethod
-    def has_read_permission(request):
-        developer_permission = request.user.groups.filter(Q(name="Developer"))
-        if developer_permission:
-            return True
-        group = request.user.groups.filter(Q(name="Manager") |
-                                           Q(name="Security Boss"))
-        parameters = [parameter for parameter in request.path_info
-                      if parameter.isdigit()]
-        user_company = str(request.user.customuser.seathasuser.seat.company_id)
-        user_seat = str(request.user.customuser.seathasuser.seat_id)
-        if (group and user_company == parameters[0]
-                and user_seat == parameters[1]):
-            return True
-        return False
-
-    def has_object_read_permission(self, request):
-        return True
-
-    def has_object_write_permission(self, request):
-        return True
-
-    @staticmethod
-    def has_write_permission(request):
-        developer_permission = request.user.groups.filter(Q(name="Developer"))
-        if developer_permission:
-            return True
-        group = request.user.groups.filter(Q(name="Manager") |
-                                           Q(name="Security Boss"))
-        parameters = [parameter for parameter in request.path_info
-                      if parameter.isdigit()]
-        user_company = str(request.user.customuser.seathasuser.seat.company_id)
-        user_seat = str(request.user.customuser.seathasuser.seat_id)
-        if (group and user_company == parameters[0]
-                and user_seat == parameters[1]):
-            return True
-        return False
-
-
-class UserPermissions(User):
-    class Meta:
-        proxy = True
-
-    @staticmethod
-    def has_read_permission(request):
-        developer_permission = request.user.groups.filter(Q(name="Developer"))
-        if developer_permission:
-            return True
-        group = request.user.groups.filter(Q(name="Manager") |
-                                           Q(name="Security Boss"))
-        parameters = [parameter for parameter in request.path_info
-                      if parameter.isdigit()]
-        user_company = str(request.user.customuser.seathasuser.seat.company_id)
-        user_seat = str(request.user.customuser.seathasuser.seat_id)
-        if (group and user_company == parameters[0]
-                and user_seat == parameters[1]):
-            return True
-        return False
-
-    def has_object_read_permission(self, request):
-        return True
-
-    def has_object_write_permission(self, request):
-        return True
-
-    @staticmethod
-    def has_write_permission(request):
-        developer_permission = request.user.groups.filter(Q(name="Developer"))
-        if developer_permission:
-            return True
-        group = request.user.groups.filter(Q(name="Manager") |
-                                           Q(name="Security Boss"))
-        parameters = [parameter for parameter in request.path_info
-                      if parameter.isdigit()]
-        user_company = str(request.user.customuser.seathasuser.seat.company_id)
-        user_seat = str(request.user.customuser.seathasuser.seat_id)
-        if (group and user_company == parameters[0]
-                and user_seat == parameters[1]):
-            return True
-        return False
-
-
 class Company(models.Model):
     """Almacena datos generales de una empresa.
     """
@@ -212,6 +115,104 @@ class Seat(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class CustomUser(models.Model):
+    """
+    Usuario extendido del user de django
+    """
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    seat = models.ForeignKey(Seat, on_delete=models.CASCADE)
+    dni = models.CharField(max_length=30, unique=True)
+    enabled = models.BooleanField(default=True)
+    objects = CustomUserManager()
+
+    def __str__(self):
+        return '{0} - {1}: {2} {3}'.format(self.user.username,
+                                           self.user.first_name,
+                                           self.user.last_name,
+                                           self.dni)
+
+    @staticmethod
+    def has_read_permission(request):
+        developer_permission = request.user.groups.filter(Q(name="Developer"))
+        if developer_permission:
+            return True
+        group = request.user.groups.filter(Q(name="Manager") |
+                                           Q(name="Security Boss"))
+        parameters = [parameter for parameter in request.path_info
+                      if parameter.isdigit()]
+        user_company = str(request.user.customuser.seathasuser.seat.company_id)
+        user_seat = str(request.user.customuser.seathasuser.seat_id)
+        if (group and user_company == parameters[0]
+                and user_seat == parameters[1]):
+            return True
+        return False
+
+    def has_object_read_permission(self, request):
+        return True
+
+    def has_object_write_permission(self, request):
+        return True
+
+    @staticmethod
+    def has_write_permission(request):
+        developer_permission = request.user.groups.filter(Q(name="Developer"))
+        if developer_permission:
+            return True
+        group = request.user.groups.filter(Q(name="Manager") |
+                                           Q(name="Security Boss"))
+        parameters = [parameter for parameter in request.path_info
+                      if parameter.isdigit()]
+        user_company = str(request.user.customuser.seathasuser.seat.company_id)
+        user_seat = str(request.user.customuser.seathasuser.seat_id)
+        if (group and user_company == parameters[0]
+                and user_seat == parameters[1]):
+            return True
+        return False
+
+
+class UserPermissions(User):
+    class Meta:
+        proxy = True
+
+    @staticmethod
+    def has_read_permission(request):
+        developer_permission = request.user.groups.filter(Q(name="Developer"))
+        if developer_permission:
+            return True
+        group = request.user.groups.filter(Q(name="Manager") |
+                                           Q(name="Security Boss"))
+        parameters = [parameter for parameter in request.path_info
+                      if parameter.isdigit()]
+        user_company = str(request.user.customuser.seathasuser.seat.company_id)
+        user_seat = str(request.user.customuser.seathasuser.seat_id)
+        if (group and user_company == parameters[0]
+                and user_seat == parameters[1]):
+            return True
+        return False
+
+    def has_object_read_permission(self, request):
+        return True
+
+    def has_object_write_permission(self, request):
+        return True
+
+    @staticmethod
+    def has_write_permission(request):
+        developer_permission = request.user.groups.filter(Q(name="Developer"))
+        if developer_permission:
+            return True
+        group = request.user.groups.filter(Q(name="Manager") |
+                                           Q(name="Security Boss"))
+        parameters = [parameter for parameter in request.path_info
+                      if parameter.isdigit()]
+        user_company = str(request.user.customuser.seathasuser.seat.company_id)
+        user_seat = str(request.user.customuser.seathasuser.seat_id)
+        if (group and user_company == parameters[0]
+                and user_seat == parameters[1]):
+            return True
+        return False
 
 
 class Visitor(models.Model):

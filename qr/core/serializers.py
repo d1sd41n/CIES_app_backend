@@ -33,6 +33,13 @@ class SeatSerializer(serializers.ModelSerializer):
         fields = '__all__'
         extra_kwargs = {'enabled': {'read_only': True}}
 
+class SeatSerializerList(serializers.Serializer):
+    id = serializers.CharField()
+    name = serializers.CharField()
+    address = serializers.CharField()
+    company = serializers.CharField()
+    email = serializers.CharField()
+
 
 class UserSerializerList(serializers.ModelSerializer):
 
@@ -92,11 +99,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = (
-            'id',
-            'dni',
-            'enabled',
-        )
+        fields = '__all__'
         extra_kwargs = {'enabled': {'read_only': True}}
 
 
