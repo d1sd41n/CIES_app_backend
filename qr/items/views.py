@@ -1,16 +1,18 @@
 from django.db.models import F, Q
 from django.db.models.functions import Lower
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from rest_framework import generics, status, viewsets
 from rest_framework.filters import SearchFilter
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from core.models import Seat
 from dry_rest_permissions.generics import DRYPermissions
 from items.models import Brand, CheckIn, Item, LostItem, TypeItem
 from items.serializers import (BrandSerializer, CheckInCreateSerializer,
                                ChekinSerializer, ItemSerializer,
-                               LostItemCreateSerializer, LostItemSerializer,
+                               ItemUpdateSerializer, LostItemSerializer,
                                RegisterItem, TypeItemSerializer)
 
 
@@ -127,6 +129,12 @@ class ItemViewSet(viewsets.ReadOnlyModelViewSet):
     DNI del dueño, la sede en que se registró,
     el empleado que lo registró, etc.
 
+    Para modificar o ver información de un item específico se debe
+    pasar la id del item como parametro a la URL, de la siguiente
+    forma:
+
+    http://localhost:8000/items/companies/pk/items/pk
+
     Este EndPoint es de sólo lectura,
     para registrar items ir a la siguiente ruta:
 
@@ -144,7 +152,7 @@ class ItemViewSet(viewsets.ReadOnlyModelViewSet):
 
     permission_classes = (DRYPermissions,)
     queryset = Item.objects.all()
-    serializer_class = ItemSerializer
+    serializer_class = ItemUpdateSerializer
     filter_backends = [SearchFilter]
     search_fields = ['owner dni']
 
@@ -182,11 +190,24 @@ class ItemViewSet(viewsets.ReadOnlyModelViewSet):
     def retrieve(self, request, company_pk, pk):
         items = Item.objects.filter(pk=pk, type_item__company__id=company_pk,
                                     enabled=True)
-        if (not len(items)):
-            return Response(status=status.HTTP_404_NOT_FOUND)
+        if not len(items):
+            return Response("Este elemento no existe", status=status.HTTP_404_NOT_FOUND)
         item = self.queryAnnotate(items)
         serializer = ItemSerializer(item, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def update(self, request, company_pk, pk):
+        item = get_object_or_404(Item,
+                                 pk=pk,
+                                 type_item__company__id=company_pk,
+                                 enabled=True)
+        serializer = ItemUpdateSerializer(item, data=request.data)
+        if serializer.is_valid():
+            if serializer.validated_data['lost']:
+                serializer.validated_data['lost_date'] = timezone.now()
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
 
 
 class CompanyTypeItem(viewsets.ModelViewSet):
@@ -308,65 +329,41 @@ class BrandItem(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class LostItemView(viewsets.ModelViewSet):
+class LostItemView(APIView):
     """
-    En este endpoint se reigstran los item perdidos,
-    este es el JSON de ejemplo
-    <pre>
-    {
-    "description": "test_description",  # Descripción del objeto perdido,
-    como una string
-    "date": "aa-mm-dd hh:mm:ss.ff",  # Fecha en que se perdió el objeto,
-    default la actual
-    "email": "test_email@testserver.test",  # Email del dueño del objeto,
-    como una string
-    "visitor_phone": "test_phone",  # Teléfono del dueño del objeto, un int
-    "item": test_pk,  # Clave primaria del objeto
-    "seat": test_pk  # Clave primaria de la sede donde sucedió la pérdida
-    }
-    </pre>
-    """
+    En este endpoint se listan todos los objetos perdidos,
 
-    queryset = LostItem.objects.all()
-    serializer_class = LostItemCreateSerializer
+    **filtros pendientes**"""
+
+    queryset = Item.objects.all()
+    serializer_class = LostItemSerializer
     filter_backends = [SearchFilter]
     search_fields = ['owner_dni']
 
     def queryAnnotate(self, items):
         lostitems = items \
-            .values('id', 'date', 'description', 'email',
-                    'visitor_phone', 'closed_case') \
-            .annotate(item_reference=F('item__reference'),
-                      item_color=F('item__color'),
-                      type_item=F('item__type_item__kind'),
-                      owner_dni=F('item__owner__dni'),
-                      item_brand=F('item__brand__brand'),
-                      owner_name=F('item__owner__first_name'),
-                      owner_last_name=F('item__owner__last_name'),
-                      lost_in_seat_id=F('seat__id'),
-                      lost_in_seat=F('seat__name'))
+            .values('id', 'lost_date', 'color', 'reference', 'description', 'lost') \
+            .annotate(type_item=F('type_item__kind'),
+                      owner_dni=F('owner__dni'),
+                      owner_email=F('owner__email'),
+                      owner_phone=F('owner__phone'),
+                      item_brand=F('brand__brand'),
+                      owner_name=F('owner__first_name'),
+                      owner_last_name=F('owner__last_name'),
+                      lost_in_seat_id=F('seat_registration__id'),
+                      lost_in_seat=F('seat_registration__name'))
         return lostitems
 
-    def list(self, request, company_pk):
-        lost_items = LostItem.objects.filter(seat__company__id=company_pk,
-                                             enabled=True)
+    def get(self, request, company_pk):
+        lost_items = Item.objects.filter(seat_registration__company__id=company_pk,
+                                         enabled=True, lost=True)
         query = self.request.GET.get("search")
         if query:
             lost_items = lost_items.filter(
-                Q(item__owner__dni__iexact=query) |
-                Q(item__brand__brand=query) |
-                Q(item__type_item__kind=query)
+                Q(owner__dni__iexact=query) |
+                Q(brand__brand=query) |
+                Q(type_item__kind=query)
             ).distinct()
-        lost_items = self.queryAnnotate(lost_items)
-        serializer = LostItemSerializer(lost_items, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def retrieve(self, request, company_pk, pk):
-        lost_items = LostItem.objects.filter(pk=pk,
-                                             seat__company__id=company_pk,
-                                             enabled=True)
-        if (not len(lost_items)):
-            return Response(status=status.HTTP_404_NOT_FOUND)
         lost_items = self.queryAnnotate(lost_items)
         serializer = LostItemSerializer(lost_items, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

@@ -222,10 +222,11 @@ class Visitor(models.Model):
     """
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
-    dni = models.CharField(max_length=30, unique=True)
+    dni = models.IntegerField(unique=True)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     enabled = models.BooleanField(default=True)
     email = models.EmailField(null=True)
+    phone = models.IntegerField(null=True, blank=True)
     objects = VisitorManager()
 
     def has_read_permission(request):

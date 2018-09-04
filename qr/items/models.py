@@ -1,15 +1,13 @@
-from .managers import (TypeItemManager,
-                       BrandManager,
-                       ItemManager,
-                       CheckinManager,
-                       LostItemManager
-                       )
-from codes.models import Code
-from core.models import Seat, Company, Visitor
+from django.contrib.auth.models import User
 from django.db import models
 from django.db.models import Q
-from django.contrib.auth.models import User
 from django.utils import timezone
+
+from codes.models import Code
+from core.models import Company, Seat, Visitor
+
+from .managers import (BrandManager, CheckinManager, ItemManager,
+                       LostItemManager, TypeItemManager)
 
 
 class TypeItem(models.Model):
@@ -107,7 +105,8 @@ class Item(models.Model):
     reference = models.CharField(max_length=30, blank=True)
     color = models.CharField(max_length=30, blank=True)
     description = models.CharField(max_length=255, blank=True)
-    lost = models.BooleanField()
+    lost = models.BooleanField(default=False)
+    lost_date = models.DateTimeField(null=True, blank=True)
     enabled = models.BooleanField(default=True)
     seat_registration = models.ForeignKey(Seat, on_delete=models.CASCADE)
     registration_date = models.DateTimeField(auto_now_add=True, blank=True)
@@ -159,9 +158,9 @@ class LostItem(models.Model):
     date = models.DateTimeField(auto_now=True, blank=True)
     seat = models.ForeignKey(Seat, on_delete=models.CASCADE, blank=True,
                              null=True)
-    email = models.EmailField(unique=True, blank=True, null=True)
-    visitor_phone = models.CharField(unique=True, max_length=20,
-                                     blank=True, null=True)
+    visitor_email = models.EmailField(unique=True)
+    visitor_phone = models.IntegerField(unique=True,
+                                        blank=True, null=True)
     closed_case = models.BooleanField(default=False)
     enabled = models.BooleanField(default=True)
     objects = LostItemManager()

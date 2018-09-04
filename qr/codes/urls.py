@@ -15,14 +15,8 @@ seat_router = routers.NestedSimpleRouter(router,
                                          r'companies',
                                          lookup='company')
 seat_router.register(r'seats', coreviews.auxViewSet, base_name='company-seats')
-# generate_codes_router = routers.NestedSimpleRouter(router,
-#                                                    r'companies',
-#                                                    lookup='company')
-# generate_codes_router.register(r'generate_codes', views.GenerateCodes,
-#                                base_name='generate-codes')
 urlpatterns = [
     url(r'^', include(company_codes_router.urls)),
-    # url(r'^', include(generate_codes_router.urls)),
     url(r'^companies/(?P<company_pk>\d+)/seats/(?P<seat_pk>\d+)/generate_codes/',
         views.GenerateCodes.as_view(), name="pdf"),
 ]

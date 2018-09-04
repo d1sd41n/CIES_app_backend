@@ -109,6 +109,8 @@ class GenerateCodes(APIView):
             pages = serializer.data['pages']
             if pages > 4:
                 return Response("El máximo de páginas a crear a la vez es de 4 páginas", status=status.HTTP_400_BAD_REQUEST)
+            elif pages < 0:
+                return Response("No se crearon páginas nuevas", status=status.HTTP_400_BAD_REQUEST)
             seat = Seat.objects.get(pk=seat_pk)
             response = HttpResponse(content_type='application/pdf')
             response['Content-Disposition'] = 'attachment; filename="codes page.pdf"'
