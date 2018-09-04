@@ -3,12 +3,9 @@ from core.models import (CustomUser,
                          Company,
                          Seat,
                          Visitor,
-                         SeatHasUser
                          )
-
 
 admin.site.register(CustomUser)
 admin.site.register(Company)
 admin.site.register(Seat)
 admin.site.register(Visitor)
-admin.site.register(SeatHasUser)
