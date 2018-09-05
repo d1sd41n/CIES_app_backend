@@ -1,11 +1,6 @@
 from rest_framework import serializers
-from items.models import (
-        Item,
-        CheckIn,
-        TypeItem,
-        Brand,
-        LostItem
-)
+
+from items.models import Brand, CheckIn, Item, LostItem, TypeItem
 
 
 class ItemSerializer(serializers.Serializer):
@@ -26,10 +21,18 @@ class ItemSerializer(serializers.Serializer):
     owner_last_name = serializers.CharField(max_length=50)
     owner_dni = serializers.CharField(max_length=30)
 
+
+class ItemUpdateSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Item
-        fields = ('__all__')
-        extra_kwargs = {'enabled': {'read_only': True}}
+        fields = ('reference',
+                  'color',
+                  'lost',
+                  'lost_date',
+                  'type_item',
+                  'brand')
+        read_only_fields = ('lost_date',)
 
 
 class ChekinSerializer(serializers.Serializer):
@@ -47,7 +50,7 @@ class ChekinSerializer(serializers.Serializer):
     date = serializers.DateTimeField()
 
     class Meta:
-        extra_kwargs = {'enabled': {'read_only': True}}
+        read_only_fields = ('enabled', 'lost_date')
 
 
 class CheckInCreateSerializer(serializers.ModelSerializer):
@@ -79,7 +82,7 @@ class RegisterItem(serializers.ModelSerializer):
     class Meta:
         model = Item
         fields = ('__all__')
-        read_only_fields = ('registered_by', 'enabled')
+        read_only_fields = ('registered_by', 'enabled', 'lost', 'lost_date')
 
 
 class RegisterItemTest(serializers.ModelSerializer):
@@ -97,34 +100,26 @@ class RegisterItemTest(serializers.ModelSerializer):
                   'seat_registration',
                   'registration_date',
                   'registered_by')
-        extra_kwargs = {'enabled': {'read_only': True}}
-
-
-class LostItemCreateSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = LostItem
-        fields = ('__all__')
-        read_only_fields = ('enabled', 'closed_case')
+        read_only_fields = ('enabled', 'lost_date')
 
 
 class LostItemSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     description = serializers.CharField(max_length=255)
-    item_reference = serializers.CharField(max_length=30)
-    item_color = serializers.CharField(max_length=30)
+    reference = serializers.CharField(max_length=30)
+    color = serializers.CharField(max_length=30)
     description = serializers.CharField(max_length=255)
     type_item = serializers.CharField(max_length=30)
     owner_name = serializers.CharField(max_length=50)
     owner_last_name = serializers.CharField(max_length=50)
     owner_dni = serializers.CharField(max_length=30)
     item_brand = serializers.CharField(max_length=30)
-    date = serializers.DateTimeField()
+    lost = serializers.BooleanField(default=False)
+    lost_date = serializers.DateTimeField()
     lost_in_seat = serializers.CharField(max_length=100)
     lost_in_seat_id = serializers.IntegerField()
-    email = serializers.EmailField()
-    visitor_phone = serializers.CharField(max_length=20)
-    closed_case = serializers.BooleanField(default=False)
+    owner_email = serializers.EmailField()
+    owner_phone = serializers.CharField(max_length=20)
 
-    class Meta:
-        extra_kwargs = {'enabled': {'read_only': True}}
+    # class Meta:
+    #     extra_kwargs = {'enabled': {'read_only': True}}
