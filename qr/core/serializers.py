@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.db.models.functions import Lower
 from ubication.models import Location
+from django.contrib.auth.models import User
 from core.models import (
     Company,
     Seat,
@@ -41,24 +42,12 @@ class SeatSerializerList(serializers.Serializer):
     email = serializers.CharField()
 
 
-class UserSerializerList(serializers.ModelSerializer):
+class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = UserPermissions
-        fields = (
-            'id',
-            'last_login',
-            'is_superuser',
-            'username',
-            'first_name',
-            'last_name',
-            'email',
-            'is_staff',
-            'is_active',
-            'date_joined',
-            'password',
-            )
-        read_only_fields = ('password', 'date_joined', 'last_login', 'enabled')
+        model = User#UserPermissions
+        fields = '__all__'
+        read_only_fields = ('date_joined', 'last_login', 'enabled')
 
 
 class UserSerializerListCustom(serializers.Serializer):
@@ -71,28 +60,6 @@ class UserSerializerListCustom(serializers.Serializer):
     dni = serializers.CharField(max_length=100)
     email = serializers.CharField(max_length=100)
     type = serializers.CharField(max_length=10)
-
-
-class UserSerializerDetail(serializers.ModelSerializer):
-    """Lista el usuario espesificado de la sede,
-    solo muestra los datos de User, no se muestran los de CustomUser,
-    Y desde aqui solo se editan los datos de user"""
-
-    class Meta:
-        model = UserPermissions
-        fields = (
-            'id',
-            'last_login',
-            'is_superuser',
-            'username',
-            'first_name',
-            'last_name',
-            'email',
-            'is_staff',
-            'is_active',
-            'date_joined',
-            )
-        read_only_fields = ('username', 'last_login', 'date_joined', 'enabled')
 
 
 class CustomUserSerializer(serializers.ModelSerializer):

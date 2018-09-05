@@ -1,5 +1,6 @@
 from rest_framework import generics
 from rest_framework import viewsets
+from django.contrib.auth.hashers import make_password
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.models import Group
 from rest_framework.response import Response
@@ -12,6 +13,9 @@ from dry_rest_permissions.generics import DRYPermissions
 from rest_framework import status
 from ubication.models import Location
 from ubication.serializers import LocationSerializer
+
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from core.models import (
     Company,
     Seat,
@@ -26,8 +30,7 @@ from core.serializers import (
     CompanySerializer,
     SeatSerializer,
     SeatSerializerList,
-    UserSerializerList,
-    UserSerializerDetail,
+    UserSerializer,
     CustomUserSerializer,
     AddressSerializer,
     VisitorSerializer,
@@ -296,10 +299,17 @@ class SeatUserViewSet(viewsets.ModelViewSet):
             return Response({"Error": "Tipo de usuario no permitido"}, status=status.HTTP_400_BAD_REQUEST)
 
 
-        serializer_user = UserSerializerList(data=data)
+        serializer_user = UserSerializer(data=data)
         serializer_custom = CustomUserSerializer(data=data)
         if serializer_user.is_valid():
             user = serializer_user.save()
+            try: # password validator
+                validate_password(data['password'], user)
+            except ValidationError as e:
+                user.delete()
+                return Response({"Password Error":e}, status=status.HTTP_400_BAD_REQUEST)
+            user.password = make_password(data['password'])
+            user.save()
             data['user'] = user.id
             if serializer_custom.is_valid():
                 customUser = serializer_custom.save()
@@ -367,21 +377,26 @@ class SeatUserViewSet(viewsets.ModelViewSet):
         data["is_staff"] = False
         data["is_active"] = True
         data["seat"] = seat_pk
-        data['user'] = user.id
-        serializer_user = UserSerializerList(user, data=data)
-        serializer_custom = CustomUserSerializer(custom, data=data)
+        print(data)
+        serializer_user = UserSerializer(user, data=data)
+        # serializer_custom = CustomUserSerializer(custom, data=data)
+        print(111111111111111)
         if serializer_user.is_valid(): #and serializer_custom.is_valid():
+            data['user'] = user.id
+            print(22222222222222222222)
             if serializer_custom.is_valid():
+                print(333333333333333333333333333)
                 serializer_user.save()
                 serializer_custom.save()
                 user.groups.clear()
                 group.user_set.add(user)
-                # data = request.data.copy()
+                data = request.data.copy()
                 # data.pop("password")
                 return Response(data, status=status.HTTP_201_CREATED)
             else:
                 return Response(serializer_custom.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
+            print("aquiiiiiiiiiiiiiiiiiiiiiiiiiiiiii")
             return Response(serializer_user.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
