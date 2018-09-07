@@ -1,5 +1,6 @@
 from rest_framework import generics
 from rest_framework import viewsets
+from django.contrib.auth.hashers import make_password
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.models import Group
 from rest_framework.response import Response
@@ -12,6 +13,9 @@ from dry_rest_permissions.generics import DRYPermissions
 from rest_framework import status
 from ubication.models import Location
 from ubication.serializers import LocationSerializer
+
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from core.models import (
     Company,
     Seat,
@@ -25,9 +29,9 @@ from rest_framework.filters import (
 from core.serializers import (
     CompanySerializer,
     SeatSerializer,
+    UserSerializerEdit,
     SeatSerializerList,
-    UserSerializerList,
-    UserSerializerDetail,
+    UserSerializer,
     CustomUserSerializer,
     AddressSerializer,
     VisitorSerializer,
@@ -102,11 +106,21 @@ class SeatViewSet(viewsets.ModelViewSet):
     """
     Ejemplo URL: http://localhost:8000/core/companies/pk/seats
 
-    ejemplo de JSON:
+    -CREATE-POST:
+    *se deben añadir los campos basicos de sede, el id de la ciudad
+    donde esta ubicada la cede y la direccion de la sede.
+    *La COMPAÑIA se añade AUTOMATICAMENTE basandose en la jerarquia, extrayendo el id de la URL,
+    si de todas formas se inserta compañia en el JSON ese campo será ignorado y no se hará nada con el.
+    *el campo city se usa para crear la tabla de la direccion de la sede, ese campo no pertenece a sede.
+    *solo se usaran los campos necesarios para crear la sede, si se pasa informacion de mas en el
+    JSON, esos datos seran ignorados e igualmente se creara la sede usando solo los campos necesarios
+    (si la sintaxis del JSON es correcta y los campos que son necesarios tambien lo son).
+    *Si la sede se crea correctamente la respuesta devuelve el MISMO JSON que se inserto,
+    mostrando toda la informacion de la sede incluyendo informacion no reelevante(no sera usada tal
+    cual se menciona en el punto anterior), al consultar la sede con el GET,
+    la informacion ireelevante no aparecera ya que no existe ni la informacion que esta en modo solo
+    escritura.
 
-    -create: se deben añadir campos basicos de sede, el id de la ciudad
-    donde esta ubicada la cede y la direccion de la sede. La compañia se añade
-    automaticamente basandose en la jerarquia.
     ejemplo:
     <pre>
     {
@@ -117,10 +131,26 @@ class SeatViewSet(viewsets.ModelViewSet):
     }
     </pre>
 
-    -List: Lista todas las sedes de la compañia,
-    cuando se hace un post para crear una sede no se debe especificar
-    la compañia, el post automaticamente agrega la compañia en la cual se
-    esta creando la sede.
+    -EDIT-PUT/PATCH:
+    *Al modificar una sede existente se deben pasar todos los campos de la sede(**"exepto compañia"**) mas la
+    direccion de esa sede, los campos que no se van a cambiar se deben enviar igualmente (con la misma informacion que ya tienen)
+    y los que se van a cambiar con la informacion nueva.
+    *al igual que en create, solo se usaran los campos de la sede mas direccion, si se pasa informacion de mas en el
+    JSON, esos datos seran ignorados e igualmente se modificara la sede usando solo los campos necesarios
+    (si la sintaxis del JSON es correcta y los campos que son necesarios tambien lo son).
+    *Si la sede se modifica la respuesta devuelve el MISMO JSON que se inserto,
+    mostrando toda la informacion de la sede incluyendo informacion no reelevante(no sera usada tal
+    cual se menciona en el punto anterior), al consultar la sede con el GET,
+    la informacion ireelevante no aparecera ya que no existe ni la informacion que esta en modo solo
+    escritura.
+    *compañia se extrae de la URL al igual que en create.
+    ejemplo json en edit:
+    {
+    "id": "8",
+    "name": "Nuevo nombre sede1",
+    "address": "calle 55 carrera 7",
+    "email": "email@email.com"
+    }
     """
 
     queryset = Seat.objects.all().order_by(Lower('name'))
@@ -142,7 +172,7 @@ class SeatViewSet(viewsets.ModelViewSet):
         try:
             Company.objects.get(id=company_pk)
         except ObjectDoesNotExist:
-            return Response({"Error": "compañia incorrecta"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Error": {"company":"la compañia no existe"}}, status=status.HTTP_400_BAD_REQUEST)
         serializer_seat = SeatSerializer(data=data)
         serializer_address = LocationSerializer(data=data)
         if serializer_address.is_valid():
@@ -153,9 +183,9 @@ class SeatViewSet(viewsets.ModelViewSet):
                 return Response(request.data, status=status.HTTP_201_CREATED)
             else:
                 adress.delete()
-                return Response(serializer_seat.errors, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"Error":serializer_seat.errors}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response(serializer_address.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Error":serializer_address.errors}, status=status.HTTP_400_BAD_REQUEST)
 
     def list(self, request, company_pk):
         queryset_list = Seat.objects.filter(
@@ -179,15 +209,14 @@ class SeatViewSet(viewsets.ModelViewSet):
     def update(self, request, pk, company_pk, **kwargs):
         data = request.data.copy()
         data['company'] = company_pk
-        seat = get_object_or_404(
-                    Seat,
-                    id=pk,
-                    company=company_pk
-                    )
-        location = get_object_or_404(
-                    Location,
-                    id=seat.address.id
-                    )
+        try:
+            seat = Seat.objects.get(id=pk, company__id=company_pk)
+        except ObjectDoesNotExist:
+            return Response({"Error":{"seat":"esa sede no existe"}}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            location = Location.objects.get(id=seat.address.id)
+        except ObjectDoesNotExist:
+            return Response({"Error":{"seat":"No existe una direccion creada para esa sede"}}, status=status.HTTP_400_BAD_REQUEST)
         address = data['address']
         data['address'] = seat.address.id
         serializer_seat = SeatSerializer(seat, data=data)
@@ -197,43 +226,71 @@ class SeatViewSet(viewsets.ModelViewSet):
             serializer_seat.save()
             return Response(request.data, status=status.HTTP_201_CREATED)
         else:
-            return Response(serializer_seat.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Error":serializer_seat.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class SeatUserViewSet(viewsets.ModelViewSet):
     """
     Ejemplo URL:  http://localhost:8000/core/companies/pk/seats/pk/users
-    List:
-    Este endpoint gestiona usuarios de una sede.
+    -GET-lIST:
+    *la id que aparece es del modelo USER
+    *el password no aparece listado.
 
-    Para hacer el post correctamente se deben incluir los datos tanto de User
-    como CustomUser  y un campo adicional llamado "type" el cual
-    es el rol del usuario guardia o administrador ####(nombre de los roles sin definir todavia)###
+    -CREATE-POST:
+    *se deben añadir los campos basicos de USER mas el campo DNI de customuser y el tipo grupo al que pertenecer (type).
+    *La COMPAÑIA y SEDE se añaden AUTOMATICAMENTE basandose en la jerarquia, extrayendo el id de la URL,
+    y sede, si de todas formas se inserta compañia o sede en el JSON esos campos seran ignorados
+    y no se hara nada con ellos.
+    *solo se usaran los campos necesarios para crear el usuario, si se pasa informacion de mas en el
+    JSON, esos datos seran ignorados e igualmente se creara el usuario y su customuser usando solo los campos necesarios
+    (si la sintaxis del JSON es correcta y los campos que son necesarios tambien lo son).
+    *Si la sede se crea correctamente se devuelve el MISMO JSON que se inserto,
+    mostrando toda la informacion tal cual exepto la contraceña, si se insertaron campos irrelevantes
+    se mostraran en la respuesta a pesar de que no se hace nada con ellos.
 
-    JSON para post o put(en este caso modificando los campos que se van a cambiar), ejemplo:
-
+    ejemplo del JSON:
     <pre>
     {
-    "username": "Test_username",  # Nombre de usuario, como una string
-    "first_name": "test_name",  # Primer nombre del usuario, como una string
-    "last_name": "test_lastname",  # Apellido del usuario, como una string
-    "email": "testemail@testserver.test",  # E-mail del usuario
-    "password": "testpassword",  # La contraseña del usuario, como una string
-    "type": "guard", # Tipo de usuario si es un guardia o es administrador (###nombre de grupos todavia no definidos#####)
-    "dni": "test_dni"  # El número de identidad del usuario, como una string
-    }
-    </pre>
-
-    El siguiente json lo uso para test (mientras estamos en desarrollo), porfavor no me lo borren...
-    <pre>
-    {
-    "username": "user2",
+    "username": "user__last_name",
     "first_name": "name",
     "last_name": "lastname",
     "email": "q@l.com",
     "password": "testpassword",
     "type": "guard",
     "dni": "test_dni"
+    }
+    </pre>
+
+    -EDIT-PUT/PATCH:
+    *Al modificar un usuario existente se deben pasar todos los campos del usuario
+     los campos que no se van a cambiar se deben enviar igualmente con la misma informacion que ya tienen
+     exepto PASSWORD.
+    *el campo password solo se debe agregar al JSON si la contraceña se va a modificar, si es es el verificasion
+    se agrega el campo password al JSON no la nueva contraceña del usuario.
+    *Si la contraceña no se va a cambiar NO DEBE HABER CAMPO PASSWORD en el JSON.
+
+    ejemplo JSON modificando password:
+    <pre>
+    {
+    "username": "user9",
+    "first_name": "name",
+    "last_name": "lastname",
+    "dni": "43433tt",
+    "password": "contraceña23324234hd",
+    "email": "es@sd.com",
+    "type": "guard"
+    }
+    </pre>
+
+    ejemplo JSON sin modificar password:
+    <pre>
+    {
+    "username": "user9",
+    "first_name": "name",
+    "last_name": "lastname",
+    "dni": "43433tt",
+    "email": "es@sd.com",
+    "type": "guard"
     }
     </pre>
 
@@ -258,7 +315,7 @@ class SeatUserViewSet(viewsets.ModelViewSet):
                               is_staff=F('user__is_staff'),
                               is_active=F('user__is_active'),
                               date_joined=F('user__date_joined'),
-                              type=F('user__groups'),
+                              type=F('user__groups__name'),
                               id=F('user__id'))
         return users
 
@@ -283,23 +340,30 @@ class SeatUserViewSet(viewsets.ModelViewSet):
         try:
             data['type']
         except KeyError:
-            return Response({"Error": "falta el campo type"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Error":{'type':"el JSON no tiene el campo type"}}, status=status.HTTP_400_BAD_REQUEST)
         try:
             group = Group.objects.get(name=data["type"])
         except ObjectDoesNotExist:
-            return Response({"Error": "el campo type es incorrecto"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Error":{'type':"no existe ese tipo de usuario"}}, status=status.HTTP_400_BAD_REQUEST)
         try:
             Seat.objects.get(id=seat_pk, company__id=company_pk)
         except ObjectDoesNotExist:
-            return Response({"Error": "sede incorrecta"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Error":{"seat":"sede incorrecta"}}, status=status.HTTP_400_BAD_REQUEST)
         if data["type"] == "Developer":
-            return Response({"Error": "Tipo de usuario no permitido"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Error":{"type":"ese tipo de usuario no permitido"}}, status=status.HTTP_400_BAD_REQUEST)
 
 
-        serializer_user = UserSerializerList(data=data)
+        serializer_user = UserSerializer(data=data)
         serializer_custom = CustomUserSerializer(data=data)
         if serializer_user.is_valid():
             user = serializer_user.save()
+            try: # password validator
+                validate_password(data['password'], user)
+            except ValidationError as e:
+                user.delete()
+                return Response({"Error":{"password":e}}, status=status.HTTP_400_BAD_REQUEST)
+            user.password = make_password(data['password'])
+            user.save()
             data['user'] = user.id
             if serializer_custom.is_valid():
                 customUser = serializer_custom.save()
@@ -309,9 +373,9 @@ class SeatUserViewSet(viewsets.ModelViewSet):
                 return Response(data, status=status.HTTP_201_CREATED)
             else:
                 user.delete()
-                return Response(serializer_custom.errors, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"Error":serializer_custom.errors}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response(serializer_user.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Error":serializer_user.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
     def retrieve(self, request, pk, company_pk, seat_pk):
@@ -340,49 +404,65 @@ class SeatUserViewSet(viewsets.ModelViewSet):
     def update(self, request, pk, company_pk, seat_pk, **kwargs):
         data = request.data.copy()
         # validadores
-        if data["type"] == "Developer":
-            return Response({"Error": "Tipo de usuario no permitido"}, status=status.HTTP_400_BAD_REQUEST)
-        try:
-            group = Group.objects.get(name=data["type"])
-        except ObjectDoesNotExist:
-            return Response({"Error": "el campo type es incorrecto"}, status=status.HTTP_400_BAD_REQUEST)
-        try:
-            Seat.objects.get(id=seat_pk, company__id=company_pk)
-        except ObjectDoesNotExist:
-            return Response({"Error": "sede incorrecta"}, status=status.HTTP_400_BAD_REQUEST)
         try:
             data['type']
         except KeyError:
-            return Response({"Error": "Falta tipo de usuario"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Error":{'type':"el JSON no tiene el campo type"}}, status=status.HTTP_400_BAD_REQUEST)
+        if data["type"] == "Developer":
+            return Response({"Error":{"type":"ese tipo de usuario no permitido"}}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            group = Group.objects.get(name=data["type"])
+        except ObjectDoesNotExist:
+            return Response({"Error":{'type':"no existe ese tipo de usuario"}}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            Seat.objects.get(id=seat_pk, company__id=company_pk)
+        except ObjectDoesNotExist:
+            return Response({"Error":{"seat":"sede incorrecta"}}, status=status.HTTP_400_BAD_REQUEST)
         try:
             user = User.objects.get(id=pk)
         except ObjectDoesNotExist:
-            return Response({"Error": "User incorrecto"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Error":{"pk":"ese usuario no existe"}}, status=status.HTTP_400_BAD_REQUEST)
         try:
             custom = CustomUser.objects.get(user=user.id, seat=seat_pk, seat__company=company_pk)
         except ObjectDoesNotExist:
-            return Response({"Error": "No se pudo encontrar el Customuser del user"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Error":{"user":"No se pudo encontrar el Customuser del user"}}, status=status.HTTP_400_BAD_REQUEST)
 
         data["is_superuser"] = False
         data["is_staff"] = False
         data["is_active"] = True
         data["seat"] = seat_pk
-        data['user'] = user.id
-        serializer_user = UserSerializerList(user, data=data)
+
+        # verificasion si hay contraceñas(si se va a cambiar la pass)
+        pval = True
+        try:
+            data['password']
+        except KeyError:
+            pval = False
+
+        serializer_user = UserSerializerEdit(user, data=data)
         serializer_custom = CustomUserSerializer(custom, data=data)
-        if serializer_user.is_valid(): #and serializer_custom.is_valid():
+        if serializer_user.is_valid():
+            if pval:
+                try: # password validator
+                    validate_password(data['password'], user)
+                except ValidationError as e:
+                    return Response({"Error":{"password":e}}, status=status.HTTP_400_BAD_REQUEST)
+            data['user'] = user.id
             if serializer_custom.is_valid():
                 serializer_user.save()
                 serializer_custom.save()
+                if pval:
+                    user.password = make_password(data['password'])
+                    user.save()
                 user.groups.clear()
                 group.user_set.add(user)
-                # data = request.data.copy()
-                # data.pop("password")
+                data = request.data.copy()
+                if pval: data.pop("password")
                 return Response(data, status=status.HTTP_201_CREATED)
             else:
-                return Response(serializer_custom.errors, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"Error":serializer_custom.errors}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response(serializer_user.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Error":serializer_user.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
 
@@ -419,11 +499,6 @@ class CompanyVisitor(viewsets.ModelViewSet):
             ).order_by(
                 Lower('last_name')
             )
-        query = self.request.GET.get("search")
-        if query:
-            queryset_list = Visitor.objects.filter(
-                        Q(dni__iexact=query)
-                        ).distinct()
         serializer = VisitorSerializer(queryset_list, many=True)
         return Response(serializer.data)
 
@@ -440,7 +515,24 @@ class CompanyVisitor(viewsets.ModelViewSet):
     def create(self, request, company_pk):
         data = request.data.copy()
         data["company"] = company_pk
+        try:
+            Company.objects.get(id=company_pk)
+        except ObjectDoesNotExist:
+            return Response({"Error":{"compnany":"la compañia no existe"}}, status=status.HTTP_400_BAD_REQUEST)
         serializer = VisitorSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response({"Error":serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+    def update(self, request, pk, company_pk, **kwargs):
+        data = request.data.copy()
+        data["company"] = company_pk
+        try:
+            visitor = Visitor.objects.get(id=pk, company__id=company_pk)
+        except ObjectDoesNotExist:
+            return Response({"Error": "el visitante no existe"}, status=status.HTTP_400_BAD_REQUEST)
+        serializer = VisitorSerializer(visitor, data=data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
