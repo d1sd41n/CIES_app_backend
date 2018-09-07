@@ -222,7 +222,7 @@ class Visitor(models.Model):
     """
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
-    dni = models.CharField(max_length=50)
+    dni = models.CharField(max_length=50, unique=True)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     enabled = models.BooleanField(default=True)
     email = models.EmailField(null=True)
