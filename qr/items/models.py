@@ -55,8 +55,10 @@ class TypeItem(models.Model):
 
 class Brand(models.Model):
     brand = models.CharField(max_length=30, unique=True)
+    #type_item = models.ManyToManyField(TypeItem) #through='BrandHasTypeItem')
     type_item = models.ForeignKey(TypeItem, on_delete=models.CASCADE,
                                   null=True, blank=True)
+
     enabled = models.BooleanField(default=True)
     objects = BrandManager()
 
@@ -94,6 +96,11 @@ class Brand(models.Model):
 
     def __str__(self):
         return self.brand
+
+
+# class BrandHasTypeItem(models.Model):
+#     brand = models.ForeignKey(Brand)
+#     type_item = models.ForeignKey(TypeItem)
 
 
 class Item(models.Model):

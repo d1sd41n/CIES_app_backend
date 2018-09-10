@@ -1,4 +1,5 @@
 from django.db.models import F, Q
+from django.core.exceptions import ObjectDoesNotExist
 from django.db.models.functions import Lower
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -7,7 +8,7 @@ from rest_framework.filters import SearchFilter
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from core.models import Seat
+from core.models import Seat, Company
 from dry_rest_permissions.generics import DRYPermissions
 from items.models import Brand, CheckIn, Item, LostItem, TypeItem
 from items.serializers import (BrandSerializer, CheckInCreateSerializer,
@@ -216,11 +217,12 @@ class CompanyTypeItem(viewsets.ModelViewSet):
 
     El siguiente es el formato JSON a usar:
 
+    <pre>
     {
     "kind": "test_kind"  # Nombre del tipo de objeto a crear
     "enabled": true/false  # true si está habilitado, false si no
-    "company": pk_company  # Id de la compañía
     }
+    </pre>
 
     se filtra con: kind
     """
@@ -257,12 +259,35 @@ class CompanyTypeItem(viewsets.ModelViewSet):
 
     def create(self, request, company_pk):
         data = request.data.copy()
+        try:
+            Company.objects.get(id=company_pk)
+        except ObjectDoesNotExist:
+            return Response({"Error": {"company":"la compañia no existe"}}, status=status.HTTP_400_BAD_REQUEST)
         data["company"] = company_pk
         serializer = TypeItemSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"Error":serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+    def update(self, request, pk, company_pk, **kwargs):
+        data = request.data.copy()
+        data['company'] = company_pk
+        try:
+            Company.objects.get(id=company_pk)
+        except ObjectDoesNotExist:
+            return Response({"Error":{"company":"Esa compañia no existe"}}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            typeitem = TypeItem.objects.get(id=pk, company__pk=company_pk)
+        except ObjectDoesNotExist:
+            return Response({"Error":{"TypeItem":"No existe ese tipo de objeto"}}, status=status.HTTP_400_BAD_REQUEST)
+        print(typeitem)
+        serializer = TypeItemSerializer(typeitem, data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(request.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response({"Error":serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class BrandItem(viewsets.ModelViewSet):
@@ -270,12 +295,13 @@ class BrandItem(viewsets.ModelViewSet):
     En este EndPoint se crean las marcas de los objetos de cada compañía
 
     El siguiente es el formato JSON a usar:
-
+    <pre>
     {
     "brand": "test_brand"  # Marca del objeto como una string
     "enabled": true/false  # true si está habilitado, false si no
     "type_item": pk_type_item  # Id del tipo de item
     }
+    </pre>
 
     se filtra con brand
 
@@ -286,21 +312,21 @@ class BrandItem(viewsets.ModelViewSet):
     filter_backends = [SearchFilter]
     search_fields = ['brand']
 
+    def queryAnnotate(self, brands):
+        brands = brands.annotate(type_item=F('type_item__kind')) \
+            .values('id', 'brand', 'enabled')
+        return brands
+
     def list(self, request, company_pk, typeitem_pk):
         queryset_list = Brand.objects.filter(
             type_item__company=company_pk,
-            type_item=typeitem_pk,
+            #type_item=typeitem_pk,
             enabled=True
-        ).order_by(
-            Lower('brand')
-        )
-        query = self.request.GET.get("search")
-        if query:
-            queryset_list = queryset_list.filter(
-                Q(brand__icontains=query)
-            ).distinct()
-        serializer = BrandSerializer(queryset_list, many=True)
-        return Response(serializer.data)
+        ).order_by(Lower('brand'))
+        brands = self.queryAnnotate(queryset_list)
+        print(brands)
+        # serializer = BrandSerializer(queryset_list, many=True)
+        return Response(brands)
 
     def retrieve(self, request, pk, company_pk, typeitem_pk):
         r_queryset = get_object_or_404(

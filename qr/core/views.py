@@ -348,7 +348,7 @@ class SeatUserViewSet(viewsets.ModelViewSet):
         try:
             Seat.objects.get(id=seat_pk, company__id=company_pk)
         except ObjectDoesNotExist:
-            return Response({"Error":{"seat":"sede incorrecta"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Error":{"seat":"no se encontró sede incorrecta"}}, status=status.HTTP_400_BAD_REQUEST)
         if data["type"] == "Developer":
             return Response({"Error":{"type":"ese tipo de usuario no permitido"}}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -409,7 +409,7 @@ class SeatUserViewSet(viewsets.ModelViewSet):
         except KeyError:
             return Response({"Error":{'type':"el JSON no tiene el campo type"}}, status=status.HTTP_400_BAD_REQUEST)
         if data["type"] == "Developer":
-            return Response({"Error":{"type":"ese tipo de usuario no permitido"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Error":{"type":"ese tipo de usuario no esta permitido"}}, status=status.HTTP_400_BAD_REQUEST)
         try:
             group = Group.objects.get(name=data["type"])
         except ObjectDoesNotExist:
@@ -417,7 +417,7 @@ class SeatUserViewSet(viewsets.ModelViewSet):
         try:
             Seat.objects.get(id=seat_pk, company__id=company_pk)
         except ObjectDoesNotExist:
-            return Response({"Error":{"seat":"sede incorrecta"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Error":{"seat":"esa sede no existe"}}, status=status.HTTP_400_BAD_REQUEST)
         try:
             user = User.objects.get(id=pk)
         except ObjectDoesNotExist:
