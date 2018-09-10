@@ -1,14 +1,16 @@
-from .managers import DisabledManager
-from core.models import Company
 from django.db import models
 from django.db.models import Q
 
+from core.models import Company
+
+from .managers import DisabledManager
+
 MODEL_CHOICE = (
-                ('brand', 'Brand'),
-                ('item', 'Item'),
-                ('lostitem', 'Lost Item'),
-                ('typeitem', 'Type Item'),
-                ('visitor', 'Visitor'))
+    ('brand', 'Brand'),
+    ('item', 'Item'),
+    ('lostitem', 'Lost Item'),
+    ('typeitem', 'Type Item'),
+    ('visitor', 'Visitor'))
 
 
 class Disabled(models.Model):
@@ -33,7 +35,7 @@ class Disabled(models.Model):
         group = request.user.groups.filter(Q(name="Manager"))
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
-        user_company = str(request.user.customuser.seathasuser.seat.company_id)
+        user_company = str(request.user.custom.seat.company_id)
         if group and user_company == parameters[0]:
             return True
         return False
@@ -52,7 +54,7 @@ class Disabled(models.Model):
         group = request.user.groups.filter(Q(name="Manager"))
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
-        user_company = str(request.user.customuser.seathasuser.seat.company_id)
+        user_company = str(request.user.custom.seat.company_id)
         if group and user_company == parameters[0]:
             return True
         return False

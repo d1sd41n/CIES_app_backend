@@ -1,5 +1,6 @@
-from django.conf.urls import url, include
+from django.conf.urls import include, url
 from rest_framework_nested import routers
+
 from core import views
 
 router = routers.DefaultRouter()
@@ -15,11 +16,14 @@ user_router.register(r'users', views.SeatUserViewSet, base_name='seat-user')
 visitor_router = routers.NestedSimpleRouter(router,
                                             r'companies',
                                             lookup='company')
-visitor_router.register(r'visitors', views.CompanyVisitor, base_name='company-visitor')
+visitor_router.register(r'visitors', views.CompanyVisitor,
+                        base_name='company-visitor')
 
 urlpatterns = [
     url(r'^', include(router.urls)),
     url(r'^', include(seat_router.urls)),
     url(r'^', include(user_router.urls)),
     url(r'^', include(visitor_router.urls)),
+    url(r'^login_token/$',
+        views.LoginToken.as_view(), name='login_token'),
 ]

@@ -1,13 +1,9 @@
-from rest_framework import serializers
 from django.db.models.functions import Lower
+from rest_framework import serializers
+from rest_framework.authtoken.models import Token
+
+from core.models import Company, CustomUser, Seat, UserPermissions, Visitor
 from ubication.models import Location
-from core.models import (
-    Company,
-    Seat,
-    UserPermissions,
-    CustomUser,
-    Visitor,
-)
 
 
 class VisitorSerializer(serializers.ModelSerializer):
@@ -31,7 +27,8 @@ class SeatSerializer(serializers.ModelSerializer):
     class Meta:
         model = Seat
         fields = '__all__'
-        extra_kwargs = {'enabled': {'read_only': True}}
+        read_only_fields = ('enabled', 'company')
+
 
 class SeatSerializerList(serializers.Serializer):
     id = serializers.CharField()
@@ -57,7 +54,7 @@ class UserSerializerList(serializers.ModelSerializer):
             'is_active',
             'date_joined',
             'password',
-            )
+        )
         read_only_fields = ('password', 'date_joined', 'last_login', 'enabled')
 
 
@@ -91,7 +88,7 @@ class UserSerializerDetail(serializers.ModelSerializer):
             'is_staff',
             'is_active',
             'date_joined',
-            )
+        )
         read_only_fields = ('username', 'last_login', 'date_joined', 'enabled')
 
 

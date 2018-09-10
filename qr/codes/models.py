@@ -26,7 +26,7 @@ class Code(models.Model):
                                            Q(name="Security Boss"))
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
-        user_company = str(request.user.customuser.seathasuser.seat.company_id)
+        user_company = str(request.user.custom.seat.company_id)
         if group and user_company == parameters[0]:
             return True
         return False
@@ -46,7 +46,7 @@ class Code(models.Model):
                                            Q(name="Security Boss"))
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
-        user_company = str(request.user.customuser.seathasuser.seat.company_id)
+        user_company = str(request.user.custom.seat.company_id)
         if group and user_company == parameters[0]:
             return True
         return False
