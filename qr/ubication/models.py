@@ -107,7 +107,7 @@ class City(models.Model):
 class Location(models.Model):
     """Almacena la latitud y longitud de algun objeto
     """
-    address = models.CharField(max_length=100)
+    address = models.CharField(max_length=100, unique=True)
     latitude = models.FloatField(blank=True, null=True)
     longitude = models.FloatField(blank=True, null=True)
     city = models.ForeignKey(City, on_delete=models.CASCADE)
