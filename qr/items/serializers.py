@@ -32,7 +32,7 @@ class ItemUpdateSerializer(serializers.ModelSerializer):
                   'lost_date',
                   'type_item',
                   'brand')
-        read_only_fields = ('lost_date',)
+        read_only_fields = ('registered_by', 'seat_registration', 'registration_date')
 
 
 class ChekinSerializer(serializers.Serializer):
