@@ -25,7 +25,7 @@ class TypeItem(models.Model):
         group = request.user.groups.filter(Q(name="Manager"))
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
-        user_company = str(request.user.customuser.seathasuser.seat.company_id)
+        user_company = str(request.user.custom.seat.company_id)
         if group and user_company == parameters[0]:
             return True
         return False
@@ -44,7 +44,7 @@ class TypeItem(models.Model):
         group = request.user.groups.filter(Q(name="Manager"))
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
-        user_company = str(request.user.customuser.seathasuser.seat.company_id)
+        user_company = str(request.user.custom.seat.company_id)
         if group and user_company == parameters[0]:
             return True
         return False
@@ -68,7 +68,7 @@ class Brand(models.Model):
         group_limit = request.user.groups.filter(Q(name="Visitor"))
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
-        user_company = str(request.user.customuser.seathasuser.seat.company_id)
+        user_company = str(request.user.custom.seat.company_id)
         if not group_limit and user_company == parameters[0]:
             return True
         return False
@@ -87,7 +87,7 @@ class Brand(models.Model):
         group_limit = request.user.groups.filter(Q(name="Visitor"))
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
-        user_company = str(request.user.customuser.seathasuser.seat.company_id)
+        user_company = str(request.user.custom.seat.company_id)
         if not group_limit and user_company == parameters[0]:
             return True
         return False
@@ -122,7 +122,7 @@ class Item(models.Model):
         group_limit = request.user.groups.filter(Q(name="Visitor"))
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
-        user_company = str(request.user.customuser.seathasuser.seat.company_id)
+        user_company = str(request.user.custom.seat.company_id)
         if not group_limit and user_company == parameters[0]:
             return True
         return False
@@ -141,7 +141,7 @@ class Item(models.Model):
         group_limit = request.user.groups.filter(Q(name="Visitor"))
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
-        user_company = str(request.user.customuser.seathasuser.seat.company_id)
+        user_company = str(request.user.custom.seat.company_id)
         if not group_limit and user_company == parameters[0]:
             return True
         return False
@@ -173,8 +173,8 @@ class LostItem(models.Model):
         group = request.user.groups.filter(Q(name="Manager"))
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
-        user_company = str(request.user.customuser.seathasuser.seat.company_id)
-        user_seat = str(request.user.customuser.seathasuser.seat_id)
+        user_company = str(request.user.custom.seat.company_id)
+        user_seat = str(request.user.custom.seat_id)
         if (group and user_company == parameters[0] and
                 user_seat == parameters[1]):
             return True
@@ -194,8 +194,8 @@ class LostItem(models.Model):
         group = request.user.groups.filter(Q(name="Manager"))
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
-        user_company = str(request.user.customuser.seathasuser.seat.company_id)
-        user_seat = str(request.user.customuser.seathasuser.seat_id)
+        user_company = str(request.user.custom.seat.company_id)
+        user_seat = str(request.user.custom.seat_id)
         if (group and user_company == parameters[0] and
                 user_seat == parameters[1]):
             return True
@@ -222,8 +222,8 @@ class CheckIn(models.Model):
         group = request.user.groups.filter(Q(name="Manager"))
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
-        user_company = str(request.user.customuser.seathasuser.seat.company_id)
-        user_seat = str(request.user.customuser.seathasuser.seat_id)
+        user_company = str(request.user.custom.seat.company_id)
+        user_seat = str(request.user.custom.seat_id)
         if (group and user_company == parameters[0] and
                 user_seat == parameters[1]):
             return True
@@ -243,8 +243,8 @@ class CheckIn(models.Model):
         group = request.user.groups.filter(Q(name="Manager"))
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
-        user_company = str(request.user.customuser.seathasuser.seat.company_id)
-        user_seat = str(request.user.customuser.seathasuser.seat_id)
+        user_company = str(request.user.custom.seat.company_id)
+        user_seat = str(request.user.custom.seat_id)
         if (group and user_company == parameters[0] and
                 user_seat == parameters[1]):
             return True
