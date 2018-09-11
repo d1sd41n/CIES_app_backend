@@ -1,5 +1,7 @@
+from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import Group, User
-from django.core.exceptions import ObjectDoesNotExist
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db.models import F, Q
 from django.db.models.functions import Lower
 from django.shortcuts import get_list_or_404, get_object_or_404
@@ -12,8 +14,8 @@ from rest_framework.response import Response
 from core.models import Company, CustomUser, Seat, Visitor
 from core.serializers import (AddressSerializer, CompanySerializer,
                               CustomUserSerializer, SeatSerializer,
-                              SeatSerializerList, UserSerializerDetail,
-                              UserSerializerList, UserSerializerListCustom,
+                              SeatSerializerList, UserSerializer,
+                              UserSerializerEdit, UserSerializerListCustom,
                               VisitorSerializer)
 from dry_rest_permissions.generics import DRYPermissions
 from ubication.models import Location
@@ -164,9 +166,9 @@ class SeatViewSet(viewsets.ModelViewSet):
                 return Response(request.data, status=status.HTTP_201_CREATED)
             else:
                 adress.delete()
-                return Response({"Error":serializer_seat.errors}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"Error": serializer_seat.errors}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response({"Error":serializer_address.errors}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Error": serializer_address.errors}, status=status.HTTP_400_BAD_REQUEST)
 
     def list(self, request, company_pk):
         queryset_list = Seat.objects.filter(
@@ -208,7 +210,7 @@ class SeatViewSet(viewsets.ModelViewSet):
             serializer_seat.save()
             return Response(request.data, status=status.HTTP_201_CREATED)
         else:
-            return Response({"Error":serializer_seat.errors}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Error": serializer_seat.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class SeatUserViewSet(viewsets.ModelViewSet):
@@ -321,27 +323,27 @@ class SeatUserViewSet(viewsets.ModelViewSet):
         try:
             data['type']
         except KeyError:
-            return Response({"Error":{'type':"el JSON no tiene el campo type"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Error": {'type': "el JSON no tiene el campo type"}}, status=status.HTTP_400_BAD_REQUEST)
         try:
             group = Group.objects.get(name=data["type"])
         except ObjectDoesNotExist:
-            return Response({"Error":{'type':"no existe ese tipo de usuario"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Error": {'type': "no existe ese tipo de usuario"}}, status=status.HTTP_400_BAD_REQUEST)
         try:
             Seat.objects.get(id=seat_pk, company__id=company_pk)
         except ObjectDoesNotExist:
-            return Response({"Error":{"seat":"sede incorrecta"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Error": {"seat": "sede incorrecta"}}, status=status.HTTP_400_BAD_REQUEST)
         if data["type"] == "Developer":
-            return Response({"Error":{"type":"ese tipo de usuario no permitido"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Error": {"type": "ese tipo de usuario no permitido"}}, status=status.HTTP_400_BAD_REQUEST)
 
         serializer_user = UserSerializerList(data=data)
         serializer_custom = CustomUserSerializer(data=data)
         if serializer_user.is_valid():
             user = serializer_user.save()
-            try: # password validator
+            try:  # password validator
                 validate_password(data['password'], user)
             except ValidationError as e:
                 user.delete()
-                return Response({"Error":{"password":e}}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"Error": {"password": e}}, status=status.HTTP_400_BAD_REQUEST)
             user.password = make_password(data['password'])
             user.save()
             data['user'] = user.id
@@ -353,9 +355,9 @@ class SeatUserViewSet(viewsets.ModelViewSet):
                 return Response(data, status=status.HTTP_201_CREATED)
             else:
                 user.delete()
-                return Response({"Error":serializer_custom.errors}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"Error": serializer_custom.errors}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response({"Error":serializer_user.errors}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Error": serializer_user.errors}, status=status.HTTP_400_BAD_REQUEST)
 
     def retrieve(self, request, pk, company_pk, seat_pk):
         user = CustomUser.objects.filter(seat__company__id=company_pk,
@@ -386,26 +388,26 @@ class SeatUserViewSet(viewsets.ModelViewSet):
         try:
             data['type']
         except KeyError:
-            return Response({"Error":{'type':"el JSON no tiene el campo type"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Error": {'type': "el JSON no tiene el campo type"}}, status=status.HTTP_400_BAD_REQUEST)
         if data["type"] == "Developer":
-            return Response({"Error":{"type":"ese tipo de usuario no permitido"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Error": {"type": "ese tipo de usuario no permitido"}}, status=status.HTTP_400_BAD_REQUEST)
         try:
             group = Group.objects.get(name=data["type"])
         except ObjectDoesNotExist:
-            return Response({"Error":{'type':"no existe ese tipo de usuario"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Error": {'type': "no existe ese tipo de usuario"}}, status=status.HTTP_400_BAD_REQUEST)
         try:
             Seat.objects.get(id=seat_pk, company__id=company_pk)
         except ObjectDoesNotExist:
-            return Response({"Error":{"seat":"sede incorrecta"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Error": {"seat": "sede incorrecta"}}, status=status.HTTP_400_BAD_REQUEST)
         try:
             user = User.objects.get(id=pk)
         except ObjectDoesNotExist:
-            return Response({"Error":{"pk":"ese usuario no existe"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Error": {"pk": "ese usuario no existe"}}, status=status.HTTP_400_BAD_REQUEST)
         try:
             custom = CustomUser.objects.get(
                 user=user.id, seat=seat_pk, seat__company=company_pk)
         except ObjectDoesNotExist:
-            return Response({"Error":{"user":"No se pudo encontrar el Customuser del user"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Error": {"user": "No se pudo encontrar el Customuser del user"}}, status=status.HTTP_400_BAD_REQUEST)
 
         data["is_superuser"] = False
         data["is_staff"] = False
@@ -431,12 +433,13 @@ class SeatUserViewSet(viewsets.ModelViewSet):
                 user.groups.clear()
                 group.user_set.add(user)
                 data = request.data.copy()
-                if pval: data.pop("password")
+                if pval:
+                    data.pop("password")
                 return Response(data, status=status.HTTP_201_CREATED)
             else:
-                return Response({"Error":serializer_custom.errors}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"Error": serializer_custom.errors}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response({"Error":serializer_user.errors}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Error": serializer_user.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class CompanyVisitor(viewsets.ModelViewSet):
@@ -495,12 +498,12 @@ class CompanyVisitor(viewsets.ModelViewSet):
         try:
             Company.objects.get(id=company_pk)
         except ObjectDoesNotExist:
-            return Response({"Error":{"compnany":"la compañia no existe"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Error": {"compnany": "la compañia no existe"}}, status=status.HTTP_400_BAD_REQUEST)
         serializer = VisitorSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response({"Error":serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"Error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
     def update(self, request, pk, company_pk, **kwargs):
         data = request.data.copy()
