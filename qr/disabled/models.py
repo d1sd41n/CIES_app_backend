@@ -35,7 +35,8 @@ class Disabled(models.Model):
         group = request.user.groups.filter(Q(name="Manager"))
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
-        user_company = str(request.user.custom.seat.company_id)
+        user_company = str(CustomUser.objects.get(
+            user=request.user).seat.company)
         if group and user_company == parameters[0]:
             return True
         return False
@@ -54,7 +55,8 @@ class Disabled(models.Model):
         group = request.user.groups.filter(Q(name="Manager"))
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
-        user_company = str(request.user.custom.seat.company_id)
+        user_company = str(CustomUser.objects.get(
+            user=request.user).seat.company)
         if group and user_company == parameters[0]:
             return True
         return False
