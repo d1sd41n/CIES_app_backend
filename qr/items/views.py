@@ -31,7 +31,7 @@ class CheckInViewSet(viewsets.ModelViewSet):
         "worker": pk_worker  # Id del empleado que realiza el ingreso/salida
         }
         </pre>"""
-    #permission_classes = (DRYPermissions,)
+    permission_classes = (DRYPermissions,)
     queryset = CheckIn.objects.all()
     serializer_class = CheckInCreateSerializer
     filter_backends = [SearchFilter]
@@ -114,7 +114,7 @@ class RegisterItemViewSet(generics.CreateAPIView):
     }
     """
 
-    #permission_classes = (DRYPermissions,)
+    permission_classes = (DRYPermissions,)
     serializer_class = RegisterItem
 
     def post(self, request, company_pk, seat_pk):
@@ -179,7 +179,7 @@ class ItemViewSet(viewsets.ModelViewSet):
     owner last_name
     owner dni"""
 
-    #permission_classes = (DRYPermissions,)
+    permission_classes = (DRYPermissions,)
     queryset = Item.objects.all()
     serializer_class = ItemUpdateSerializer
     filter_backends = [SearchFilter]
@@ -268,7 +268,7 @@ class CompanyTypeItem(viewsets.ModelViewSet):
 
     se filtra con: kind
     """
-    #permission_classes = (DRYPermissions,)
+    permission_classes = (DRYPermissions,)
     queryset = TypeItem.objects.all().order_by(Lower('kind'))
     serializer_class = TypeItemSerializer
     filter_backends = [SearchFilter]
@@ -345,7 +345,7 @@ class BrandItem(viewsets.ModelViewSet):
     se filtra con brand
 
     """
-    #permission_classes = (DRYPermissions,)
+    permission_classes = (DRYPermissions,)
     queryset = Brand.objects.all().order_by(Lower('brand'))
     serializer_class = BrandSerializer
     filter_backends = [SearchFilter]
@@ -419,7 +419,7 @@ class LostItemView(APIView):
     En este endpoint se listan todos los objetos perdidos,
 
     **filtros pendientes**"""
-
+    permission_classes = (DRYPermissions,)
     queryset = Item.objects.all()
     serializer_class = LostItemSerializer
     filter_backends = [SearchFilter]

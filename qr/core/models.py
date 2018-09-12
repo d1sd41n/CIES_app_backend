@@ -35,7 +35,8 @@ class Company(models.Model):
         group = request.user.groups.filter(Q(name="Manager"))
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
-        user_company = str(request.user.customuser.seathasuser.seat.company_id)
+        user_company = str(CustomUser.objects.get(
+            user=request.user).seat.company)
         if group and user_company == parameters[0]:
             return True
         return False
@@ -54,7 +55,8 @@ class Company(models.Model):
         group = request.user.groups.filter(Q(name="Manager"))
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
-        user_company = str(request.user.customuser.seathasuser.seat.company_id)
+        user_company = str(CustomUser.objects.get(
+            user=request.user).seat.company)
         if group and user_company == parameters[0]:
             return True
         return False
@@ -85,8 +87,9 @@ class Seat(models.Model):
         group = request.user.groups.filter(Q(name="Manager"))
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
-        user_company = str(request.user.customuser.seathasuser.seat.company_id)
-        user_seat = str(request.user.customuser.seathasuser.seat_id)
+        user_company = str(CustomUser.objects.get(
+            user=request.user).seat.company)
+        user_seat = str(CustomUser.objects.get(user=request.user).seat)
         if (group and user_company == parameters[0]
                 and user_seat == parameters[1]):
             return True
@@ -106,8 +109,9 @@ class Seat(models.Model):
         group = request.user.groups.filter(Q(name="Manager"))
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
-        user_company = str(request.user.customuser.seathasuser.seat.company_id)
-        user_seat = str(request.user.customuser.seathasuser.seat_id)
+        user_company = str(CustomUser.objects.get(
+            user=request.user).seat.company)
+        user_seat = str(CustomUser.objects.get(user=request.user).seat)
         if (group and user_company == parameters[0]
                 and user_seat == parameters[1]):
             return True
@@ -142,8 +146,9 @@ class CustomUser(models.Model):
                                            Q(name="Security Boss"))
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
-        user_company = str(request.user.customuser.seathasuser.seat.company_id)
-        user_seat = str(request.user.customuser.seathasuser.seat_id)
+        user_company = str(CustomUser.objects.get(
+            user=request.user).seat.company)
+        user_seat = str(CustomUser.objects.get(user=request.user).seat)
         if (group and user_company == parameters[0]
                 and user_seat == parameters[1]):
             return True
@@ -164,8 +169,9 @@ class CustomUser(models.Model):
                                            Q(name="Security Boss"))
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
-        user_company = str(request.user.customuser.seathasuser.seat.company_id)
-        user_seat = str(request.user.customuser.seathasuser.seat_id)
+        user_company = str(CustomUser.objects.get(
+            user=request.user).seat.company)
+        user_seat = str(CustomUser.objects.get(user=request.user).seat)
         if (group and user_company == parameters[0]
                 and user_seat == parameters[1]):
             return True
@@ -185,8 +191,9 @@ class UserPermissions(User):
                                            Q(name="Security Boss"))
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
-        user_company = str(request.user.customuser.seathasuser.seat.company_id)
-        user_seat = str(request.user.customuser.seathasuser.seat_id)
+        user_company = str(CustomUser.objects.get(
+            user=request.user).seat.company)
+        user_seat = str(CustomUser.objects.get(user=request.user).seat)
         if (group and user_company == parameters[0]
                 and user_seat == parameters[1]):
             return True
@@ -207,8 +214,9 @@ class UserPermissions(User):
                                            Q(name="Security Boss"))
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
-        user_company = str(request.user.customuser.seathasuser.seat.company_id)
-        user_seat = str(request.user.customuser.seathasuser.seat_id)
+        user_company = str(CustomUser.objects.get(
+            user=request.user).seat.company)
+        user_seat = str(CustomUser.objects.get(user=request.user).seat)
         if (group and user_company == parameters[0]
                 and user_seat == parameters[1]):
             return True
@@ -236,7 +244,8 @@ class Visitor(models.Model):
         group_limit = request.user.groups.filter(Q(name="Visitor"))
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
-        user_company = str(request.user.customuser.seathasuser.seat.company_id)
+        user_company = str(CustomUser.objects.get(
+            user=request.user).seat.company)
         if not group_limit and user_company == parameters[0]:
             return True
         return False
@@ -255,7 +264,8 @@ class Visitor(models.Model):
         group_limit = request.user.groups.filter(Q(name="Visitor"))
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
-        user_company = str(request.user.customuser.seathasuser.seat.company_id)
+        user_company = str(CustomUser.objects.get(
+            user=request.user).seat.company)
         if not group_limit and user_company == parameters[0]:
             return True
         return False
