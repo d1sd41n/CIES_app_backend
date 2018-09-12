@@ -32,7 +32,7 @@ class ItemUpdateSerializer(serializers.ModelSerializer):
                   'lost_date',
                   'type_item',
                   'brand')
-        read_only_fields = ('lost_date',)
+        read_only_fields = ('registered_by', 'seat_registration', 'registration_date')
 
 
 class ChekinSerializer(serializers.Serializer):
@@ -40,7 +40,7 @@ class ChekinSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     seat_id = serializers.IntegerField()
     seat_dir = serializers.CharField(max_length=30)
-    item = serializers.IntegerField()
+    item_id = serializers.IntegerField()
     type_item = serializers.CharField(max_length=255)
     lost = serializers.BooleanField(default=False)
     owner_name = serializers.CharField(max_length=50)
@@ -59,6 +59,7 @@ class CheckInCreateSerializer(serializers.ModelSerializer):
         model = CheckIn
         fields = ('__all__')
         read_only_fields = ('date', 'enabled')
+
 
 
 class TypeItemSerializer(serializers.ModelSerializer):

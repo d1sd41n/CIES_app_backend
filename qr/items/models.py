@@ -261,4 +261,4 @@ class CheckIn(models.Model):
         return False
 
     def __str__(self):
-        return self.item
+        return str(self.item)

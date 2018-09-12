@@ -1,4 +1,5 @@
 from django.db.models import F, Q
+from django.core.exceptions import ObjectDoesNotExist
 from django.db.models.functions import Lower
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -6,8 +7,10 @@ from rest_framework import generics, status, viewsets
 from rest_framework.filters import SearchFilter
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.contrib.auth.models import User
 
-from core.models import Seat
+from core.models import Seat, Company, CustomUser
+from codes.models import Code
 from dry_rest_permissions.generics import DRYPermissions
 from items.models import Brand, CheckIn, Item, LostItem, TypeItem
 from items.serializers import (BrandSerializer, CheckInCreateSerializer,
@@ -20,13 +23,14 @@ class CheckInViewSet(viewsets.ModelViewSet):
     """En este EndPoint se registra la entrada y salida del objeto a la sede
 
         El siguiente es el formato de JSON a usar:
-
+        <pre>
         {
         "go_in": true/false,  # true si ingresa, false si sale
         "item": pk_item,  # Id del objeto que ingresa
         "seat": pk_seat,  # Id de la sede donde se realiza el último ingreso
         "worker": pk_worker  # Id del empleado que realiza el ingreso/salida
-        }"""
+        }
+        </pre>"""
     permission_classes = (DRYPermissions,)
     queryset = CheckIn.objects.all()
     serializer_class = CheckInCreateSerializer
@@ -35,16 +39,32 @@ class CheckInViewSet(viewsets.ModelViewSet):
 
     def create(self, request, company_pk, seat_pk):
         data = request.data
+        try:
+            Company.objects.get(id=company_pk)
+        except ObjectDoesNotExist:
+            return Response({"Error":{"company":"Esa compañia no existe"}}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            seat = Seat.objects.get(id=seat_pk, company__id=company_pk)
+        except ObjectDoesNotExist:
+            return Response({"Error": {"seat":"esa sede no existe"}}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            user = User.objects.get(id=data['worker'])
+        except ObjectDoesNotExist:
+            return Response({"Error": {"worker":"ese usuario no existe"}}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            CustomUser.objects.get(id=data['worker'], seat=seat_pk)
+        except ObjectDoesNotExist:
+            return Response({"Error": {"worker":"ese usuario es incorrecto"}}, status=status.HTTP_400_BAD_REQUEST)
         serializer = CheckInCreateSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"Error":serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
     def queryAnnotate(self, checks):
         checks = checks \
-            .values('id', 'item', 'date', 'go_in') \
-            .annotate(seat_id=F('seat__id'),
+            .values('id', 'date', 'go_in') \
+            .annotate(seat_id=F('seat__id'), item_id=F('item'),
                       seat_dir=F('seat__address__address'),
                       owner_last_name=F('item__owner__last_name'),
                       owner_dni=F('item__owner__dni'),
@@ -56,13 +76,6 @@ class CheckInViewSet(viewsets.ModelViewSet):
     def list(self, request, company_pk, seat_pk):
         checks = CheckIn.objects.filter(seat__company__id=company_pk,
                                         seat__id=seat_pk)
-        query = self.request.GET.get("last_name")
-        if query:
-            queryset_list = queryset_list.filter(
-                Q(item__owner__dni__icontains=query)
-            ).distinct()
-            serializer = VisitorSerializer(queryset_list, many=True)
-            return Response(serializer.data)
         checks = self.queryAnnotate(checks)
         serializer = ChekinSerializer(checks, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -76,6 +89,9 @@ class CheckInViewSet(viewsets.ModelViewSet):
         serializer = ChekinSerializer(checks, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    def update(self, request, company_pk, seat_pk, pk, **kwargs):
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
 
 class RegisterItemViewSet(generics.CreateAPIView):
     """En este endpoint se registran los item.
@@ -86,18 +102,15 @@ class RegisterItemViewSet(generics.CreateAPIView):
     Para registrar se debe enviar un JSON con el siguiente formato:
 
     {
+    <pre>
     "reference": "test_reference",  # Referencia del objeto como una string
     "color": "test_color",  # Color del objeto como una string
     "description": "test_description",  # Descripción del objeto, una string
-    "lost": true/false, # true si el objeto está perdido, false si no
-    "enabled": true/false, # true si el objeto está habilitado, false si no
-    "registration_date": "yyyy-mm-dd",  # Fecha del registro, default actual
     "type_item": pk_type_item,  # Id del tipo de objeto
     "code": "test_hash", # Hash relacionado al código QR
     "owner": pk_owner,  # Id del dueño del objeto
-    "brand": pk_brand,  # Id de la marca del objeto
-    "seat_registration": pk_seat, # Id de la sede donde se registró el objeto
-    "registered_by": pk_worker  # Id del empleado que registró el objeto
+    "brand": pk_brand  # Id de la marca del objeto
+    </pre>
     }
     """
 
@@ -105,24 +118,40 @@ class RegisterItemViewSet(generics.CreateAPIView):
     serializer_class = RegisterItem
 
     def post(self, request, company_pk, seat_pk):
-        data = request.data
-        if str(data['seat_registration']) != str(seat_pk):
-            return Response('El ingreso no se realizó en esta sede',
-                            status=status.HTTP_400_BAD_REQUEST)
-        r_queryset = get_object_or_404(
-            Seat,
-            id=seat_pk,
-            company=company_pk,
-            enabled=True
-        )
+        data = request.data.copy()
+        try:
+            seat = Seat.objects.get(id=seat_pk, company__id=company_pk)
+        except ObjectDoesNotExist:
+            return Response({"Error": {"seat":"esa sede no existe"}}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            typeitem = TypeItem.objects.get(id=data['type_item'], company__pk=company_pk)
+        except ObjectDoesNotExist:
+            return Response({"Error":{"TypeItem":"No existe ese tipo de objeto"}}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            brand = Brand.objects.get(id=data['brand'], type_item__company=company_pk)
+        except ObjectDoesNotExist:
+            return Response({"Error":{"brand":"No existe ese tipo de objeto de esta marca"}}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            code = Code.objects.get(code=data['code'], seat=seat_pk)
+        except ObjectDoesNotExist:
+            return Response({"Error":{"code":"Codigo invalido"}}, status=status.HTTP_400_BAD_REQUEST)
+        if code.used:
+            return Response({"Error":{"code":"ese codigo ya esta en uso"}}, status=status.HTTP_400_BAD_REQUEST)
+
+        data['seat_registration'] = seat_pk
+        data['lost'] = False
+        data['enabled'] = True
+        data['registration_date'] = timezone.now()
         serializer = RegisterItem(data=data)
         if serializer.is_valid():
             serializer.save(registered_by=request.user, enabled=True)
+            code.used = True
+            code.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"Error":serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class ItemViewSet(viewsets.ReadOnlyModelViewSet):
+class ItemViewSet(viewsets.ModelViewSet):
     """"
     En este EndPoint se pueden ver todos los items registrados
     en una compañía con todos sus detalles, como dueño,
@@ -135,7 +164,7 @@ class ItemViewSet(viewsets.ReadOnlyModelViewSet):
 
     http://localhost:8000/items/companies/pk/items/pk
 
-    Este EndPoint es de sólo lectura,
+    Este EndPoint solo lista y modifica,
     para registrar items ir a la siguiente ruta:
 
     (http://localhost:8000/items/companies/pk/seats/pk/registeritem/)
@@ -191,23 +220,38 @@ class ItemViewSet(viewsets.ReadOnlyModelViewSet):
         items = Item.objects.filter(pk=pk, type_item__company__id=company_pk,
                                     enabled=True)
         if not len(items):
-            return Response("Este elemento no existe", status=status.HTTP_404_NOT_FOUND)
+            return Response({"Error":{"item":"Este item no existe"}}, status=status.HTTP_404_NOT_FOUND)
         item = self.queryAnnotate(items)
         serializer = ItemSerializer(item, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def update(self, request, company_pk, pk):
-        item = get_object_or_404(Item,
-                                 pk=pk,
-                                 type_item__company__id=company_pk,
-                                 enabled=True)
+    def update(self, request, company_pk, pk, **kwargs):
+        try:
+            Company.objects.get(id=company_pk)
+        except ObjectDoesNotExist:
+            return Response({"Error": {"company":"la compañia no existe"}}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            typeitem = TypeItem.objects.get(id=request.data['type_item'], company__pk=company_pk)
+        except ObjectDoesNotExist:
+            return Response({"Error":{"TypeItem":"No existe ese tipo de objeto"}}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            brand = Brand.objects.get(id=request.data['brand'], type_item__company=company_pk)
+        except ObjectDoesNotExist:
+            return Response({"Error":{"brand":"No existe ese tipo de objeto de esta marca"}}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            item = Item.objects.get(id=pk, type_item__company=company_pk)
+        except ObjectDoesNotExist:
+            return Response({"Error":{"item":"No existe ese item"}}, status=status.HTTP_400_BAD_REQUEST)
         serializer = ItemUpdateSerializer(item, data=request.data)
         if serializer.is_valid():
             if serializer.validated_data['lost']:
                 serializer.validated_data['lost_date'] = timezone.now()
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"Error":serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+    def create(self, request, **kwargs):
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class CompanyTypeItem(viewsets.ModelViewSet):
@@ -216,11 +260,11 @@ class CompanyTypeItem(viewsets.ModelViewSet):
 
     El siguiente es el formato JSON a usar:
 
+    <pre>
     {
     "kind": "test_kind"  # Nombre del tipo de objeto a crear
-    "enabled": true/false  # true si está habilitado, false si no
-    "company": pk_company  # Id de la compañía
     }
+    </pre>
 
     se filtra con: kind
     """
@@ -257,12 +301,34 @@ class CompanyTypeItem(viewsets.ModelViewSet):
 
     def create(self, request, company_pk):
         data = request.data.copy()
+        try:
+            Company.objects.get(id=company_pk)
+        except ObjectDoesNotExist:
+            return Response({"Error": {"company":"la compañia no existe"}}, status=status.HTTP_400_BAD_REQUEST)
         data["company"] = company_pk
         serializer = TypeItemSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"Error":serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+    def update(self, request, pk, company_pk, **kwargs):
+        data = request.data.copy()
+        data['company'] = company_pk
+        try:
+            Company.objects.get(id=company_pk)
+        except ObjectDoesNotExist:
+            return Response({"Error":{"company":"Esa compañia no existe"}}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            typeitem = TypeItem.objects.get(id=pk, company__pk=company_pk)
+        except ObjectDoesNotExist:
+            return Response({"Error":{"TypeItem":"No existe ese tipo de objeto"}}, status=status.HTTP_400_BAD_REQUEST)
+        serializer = TypeItemSerializer(typeitem, data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(request.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response({"Error":serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class BrandItem(viewsets.ModelViewSet):
@@ -270,12 +336,11 @@ class BrandItem(viewsets.ModelViewSet):
     En este EndPoint se crean las marcas de los objetos de cada compañía
 
     El siguiente es el formato JSON a usar:
-
+    <pre>
     {
     "brand": "test_brand"  # Marca del objeto como una string
-    "enabled": true/false  # true si está habilitado, false si no
-    "type_item": pk_type_item  # Id del tipo de item
     }
+    </pre>
 
     se filtra con brand
 
@@ -286,21 +351,19 @@ class BrandItem(viewsets.ModelViewSet):
     filter_backends = [SearchFilter]
     search_fields = ['brand']
 
+    def queryAnnotate(self, brands):
+        brands = brands.values('id', 'brand', 'enabled'). \
+            annotate(type_item=F('type_item__kind'))
+        return brands
+
     def list(self, request, company_pk, typeitem_pk):
         queryset_list = Brand.objects.filter(
             type_item__company=company_pk,
             type_item=typeitem_pk,
             enabled=True
-        ).order_by(
-            Lower('brand')
-        )
-        query = self.request.GET.get("search")
-        if query:
-            queryset_list = queryset_list.filter(
-                Q(brand__icontains=query)
-            ).distinct()
-        serializer = BrandSerializer(queryset_list, many=True)
-        return Response(serializer.data)
+        ).order_by(Lower('brand'))
+        brands = self.queryAnnotate(queryset_list)
+        return Response(brands)
 
     def retrieve(self, request, pk, company_pk, typeitem_pk):
         r_queryset = get_object_or_404(
@@ -314,19 +377,41 @@ class BrandItem(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def create(self, request, company_pk, typeitem_pk):
-        validator = get_object_or_404(
-            TypeItem,
-            company=company_pk,
-            pk=typeitem_pk,
-            enabled=True
-        )
+        try:
+            Company.objects.get(id=company_pk)
+        except ObjectDoesNotExist:
+            return Response({"Error":{"company":"Esa compañia no existe"}}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            typeitem = TypeItem.objects.get(id=typeitem_pk, company__pk=company_pk)
+        except ObjectDoesNotExist:
+            return Response({"Error":{"TypeItem":"No existe ese tipo de objeto"}}, status=status.HTTP_400_BAD_REQUEST)
+
         data = request.data.copy()
         data["type_item"] = typeitem_pk
+
         serializer = BrandSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def update(self, request, pk, company_pk, typeitem_pk, **kwargs):
+        data = request.data.copy()
+        data['company'] = company_pk
+        try:
+            Company.objects.get(id=company_pk)
+        except ObjectDoesNotExist:
+            return Response({"Error":{"company":"Esa compañia no existe"}}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            brand = Brand.objects.get(type_item=typeitem_pk, type_item__company=company_pk, id=pk)
+        except ObjectDoesNotExist:
+            return Response({"Error":{"item":"No existe ese tipo de objeto de esta marca"}}, status=status.HTTP_400_BAD_REQUEST)
+        serializer = BrandSerializer(brand, data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(request.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response({"Error":serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class LostItemView(APIView):
@@ -334,7 +419,7 @@ class LostItemView(APIView):
     En este endpoint se listan todos los objetos perdidos,
 
     **filtros pendientes**"""
-
+    permission_classes = (DRYPermissions,)
     queryset = Item.objects.all()
     serializer_class = LostItemSerializer
     filter_backends = [SearchFilter]
