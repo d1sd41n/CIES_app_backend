@@ -7,8 +7,9 @@ from rest_framework import generics, status, viewsets
 from rest_framework.filters import SearchFilter
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.contrib.auth.models import User
 
-from core.models import Seat, Company
+from core.models import Seat, Company, CustomUser
 from codes.models import Code
 from dry_rest_permissions.generics import DRYPermissions
 from items.models import Brand, CheckIn, Item, LostItem, TypeItem
@@ -22,13 +23,14 @@ class CheckInViewSet(viewsets.ModelViewSet):
     """En este EndPoint se registra la entrada y salida del objeto a la sede
 
         El siguiente es el formato de JSON a usar:
-
+        <pre>
         {
         "go_in": true/false,  # true si ingresa, false si sale
         "item": pk_item,  # Id del objeto que ingresa
         "seat": pk_seat,  # Id de la sede donde se realiza el último ingreso
         "worker": pk_worker  # Id del empleado que realiza el ingreso/salida
-        }"""
+        }
+        </pre>"""
     #permission_classes = (DRYPermissions,)
     queryset = CheckIn.objects.all()
     serializer_class = CheckInCreateSerializer
@@ -37,16 +39,32 @@ class CheckInViewSet(viewsets.ModelViewSet):
 
     def create(self, request, company_pk, seat_pk):
         data = request.data
+        try:
+            Company.objects.get(id=company_pk)
+        except ObjectDoesNotExist:
+            return Response({"Error":{"company":"Esa compañia no existe"}}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            seat = Seat.objects.get(id=seat_pk, company__id=company_pk)
+        except ObjectDoesNotExist:
+            return Response({"Error": {"seat":"esa sede no existe"}}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            user = User.objects.get(id=data['worker'])
+        except ObjectDoesNotExist:
+            return Response({"Error": {"worker":"ese usuario no existe"}}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            CustomUser.objects.get(id=data['worker'], seat=seat_pk)
+        except ObjectDoesNotExist:
+            return Response({"Error": {"worker":"ese usuario es incorrecto"}}, status=status.HTTP_400_BAD_REQUEST)
         serializer = CheckInCreateSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"Error":serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
     def queryAnnotate(self, checks):
         checks = checks \
-            .values('id', 'item', 'date', 'go_in') \
-            .annotate(seat_id=F('seat__id'),
+            .values('id', 'date', 'go_in') \
+            .annotate(seat_id=F('seat__id'), item_id=F('item'),
                       seat_dir=F('seat__address__address'),
                       owner_last_name=F('item__owner__last_name'),
                       owner_dni=F('item__owner__dni'),
@@ -58,13 +76,6 @@ class CheckInViewSet(viewsets.ModelViewSet):
     def list(self, request, company_pk, seat_pk):
         checks = CheckIn.objects.filter(seat__company__id=company_pk,
                                         seat__id=seat_pk)
-        query = self.request.GET.get("last_name")
-        if query:
-            queryset_list = queryset_list.filter(
-                Q(item__owner__dni__icontains=query)
-            ).distinct()
-            serializer = VisitorSerializer(queryset_list, many=True)
-            return Response(serializer.data)
         checks = self.queryAnnotate(checks)
         serializer = ChekinSerializer(checks, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -77,6 +88,9 @@ class CheckInViewSet(viewsets.ModelViewSet):
         checks = self.queryAnnotate(checks)
         serializer = ChekinSerializer(checks, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def update(self, request, company_pk, seat_pk, pk, **kwargs):
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class RegisterItemViewSet(generics.CreateAPIView):
@@ -227,7 +241,7 @@ class ItemViewSet(viewsets.ModelViewSet):
         try:
             item = Item.objects.get(id=pk, type_item__company=company_pk)
         except ObjectDoesNotExist:
-            return Response({"Error":{"brand":"No existe ese tipo de objeto de esta marca"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Error":{"item":"No existe ese item"}}, status=status.HTTP_400_BAD_REQUEST)
         serializer = ItemUpdateSerializer(item, data=request.data)
         if serializer.is_valid():
             if serializer.validated_data['lost']:
