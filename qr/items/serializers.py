@@ -121,6 +121,3 @@ class LostItemSerializer(serializers.Serializer):
     lost_in_seat_id = serializers.IntegerField()
     owner_email = serializers.EmailField()
     owner_phone = serializers.CharField(max_length=20)
-
-    # class Meta:
-    #     extra_kwargs = {'enabled': {'read_only': True}}
