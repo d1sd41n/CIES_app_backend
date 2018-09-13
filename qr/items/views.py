@@ -86,6 +86,8 @@ class CheckInViewSet(viewsets.ModelViewSet):
             checks = checks.filter(
                 Q(item__id__iexact=query)
             ).distinct()
+            if (not len(checks)):
+                return Response({"Error":{"item":"Item no encontrado"}},status=status.HTTP_404_NOT_FOUND)
         checks = self.queryAnnotate(checks)
         serializer = ChekinSerializer(checks, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
