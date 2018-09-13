@@ -75,7 +75,8 @@ class CheckInViewSet(viewsets.ModelViewSet):
                       owner_dni=F('item__owner__dni'),
                       type_item=F('item__type_item__kind'),
                       owner_name=F('item__owner__first_name'),
-                      lost=F('item__lost'),)
+                      lost=F('item__lost'),
+                      seat_name=F('seat__name'))
         return checks
 
     def list(self, request, company_pk, seat_pk):
