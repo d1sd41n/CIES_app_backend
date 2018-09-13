@@ -30,7 +30,12 @@ class CheckInViewSet(viewsets.ModelViewSet):
         "seat": pk_seat,  # Id de la sede donde se realiza el último ingreso
         "worker": pk_worker  # Id del empleado que realiza el ingreso/salida
         }
-        </pre>"""
+        </pre>
+
+        en este endpoint se puede filtrar por el id del Item
+        para hacerlo:
+
+        http://localhost:8000/items/companies/pk/seats/1pk/check/?search_item=ID_DEL_ITEM"""
     permission_classes = (DRYPermissions,)
     queryset = CheckIn.objects.all()
     serializer_class = CheckInCreateSerializer
@@ -76,6 +81,11 @@ class CheckInViewSet(viewsets.ModelViewSet):
     def list(self, request, company_pk, seat_pk):
         checks = CheckIn.objects.filter(seat__company__id=company_pk,
                                         seat__id=seat_pk)
+        query = self.request.GET.get("search_item")
+        if query:
+            checks = checks.filter(
+                Q(item__id__iexact=query)
+            ).distinct()
         checks = self.queryAnnotate(checks)
         serializer = ChekinSerializer(checks, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -419,8 +429,9 @@ class LostItemView(APIView):
     En este endpoint se listan todos los objetos perdidos,
 
     **filtros pendientes**"""
-    permission_classes = (DRYPermissions,)
     queryset = Item.objects.all()
+    serializer_class = ItemSerializer
+    permission_classes = (DRYPermissions,)
     serializer_class = LostItemSerializer
     filter_backends = [SearchFilter]
     search_fields = ['owner_dni']
