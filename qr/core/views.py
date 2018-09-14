@@ -340,6 +340,8 @@ class SeatUserViewSet(viewsets.ModelViewSet):
             return Response({"Error": {"seat": "sede incorrecta"}}, status=status.HTTP_400_BAD_REQUEST)
         if data["type"] == "Developer":
             return Response({"Error": {"type": "ese tipo de usuario no permitido"}}, status=status.HTTP_400_BAD_REQUEST)
+        if not data["dni"].isnumeric():
+            return Response({"Error": {"dni": "La Cedula solo puede ser numerica"}}, status=status.HTTP_400_BAD_REQUEST)
 
         serializer_user = UserSerializer(data=data)
         serializer_custom = CustomUserSerializer(data=data)
@@ -403,6 +405,8 @@ class SeatUserViewSet(viewsets.ModelViewSet):
                 user=user.id, seat=seat_pk, seat__company=company_pk)
         except ObjectDoesNotExist:
             return Response({"Error": {"user": "No se pudo encontrar el Customuser del user"}}, status=status.HTTP_400_BAD_REQUEST)
+        if not data["dni"].isnumeric():
+            return Response({"Error": {"dni": "La Cedula solo puede ser numerica"}}, status=status.HTTP_400_BAD_REQUEST)
 
         data["is_superuser"] = False
         data["is_staff"] = False
