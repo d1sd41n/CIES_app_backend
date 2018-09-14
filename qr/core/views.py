@@ -341,7 +341,7 @@ class SeatUserViewSet(viewsets.ModelViewSet):
         if data["type"] == "Developer":
             return Response({"Error": {"type": "ese tipo de usuario no permitido"}}, status=status.HTTP_400_BAD_REQUEST)
 
-        serializer_user = UserSerializerList(data=data)
+        serializer_user = UserSerializer(data=data)
         serializer_custom = CustomUserSerializer(data=data)
         if serializer_user.is_valid():
             user = serializer_user.save()
