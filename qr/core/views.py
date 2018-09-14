@@ -84,6 +84,9 @@ class CompanyViewSet(viewsets.ModelViewSet):
         serializer = CompanySerializer(r_queryset)
         return Response(serializer.data)
 
+    def destroy(self, request, pk):
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
 
 class SeatViewSet(viewsets.ModelViewSet):
     """
@@ -211,6 +214,9 @@ class SeatViewSet(viewsets.ModelViewSet):
             return Response(request.data, status=status.HTTP_201_CREATED)
         else:
             return Response({"Error": serializer_seat.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+    def destroy(self, request, pk, company_pk, ):
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class SeatUserViewSet(viewsets.ModelViewSet):
@@ -368,19 +374,8 @@ class SeatUserViewSet(viewsets.ModelViewSet):
         serializer = UserSerializerListCustom(checks, many=True)
         return Response(serializer.data)
 
-    def destroy(self, request, pk, company_pk, seat_pk, **kwargs):
-        user = get_object_or_404(
-            User,
-            id=pk,
-        )
-        custom = get_object_or_404(
-            CustomUser,
-            user=user.id,
-            seat=seat_pk,
-            seat__company=company_pk
-        )
-        user.delete()
-        return Response({"Delete": "Done"}, status=status.HTTP_204_NO_CONTENT)
+    def destroy(self, request, pk, company_pk, seat_pk):
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def update(self, request, pk, company_pk, seat_pk, **kwargs):
         data = request.data.copy()
@@ -517,6 +512,9 @@ class CompanyVisitor(viewsets.ModelViewSet):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def destroy(self, request, pk, company_pk, **kwargs):
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class LoginToken(ObtainAuthToken):

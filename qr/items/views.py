@@ -105,6 +105,9 @@ class CheckInViewSet(viewsets.ModelViewSet):
     def update(self, request, company_pk, seat_pk, pk, **kwargs):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
+    def destroy(self, request, company_pk, seat_pk, pk):
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
 
 class RegisterItemViewSet(generics.CreateAPIView):
     """En este endpoint se registran los item.
@@ -266,6 +269,9 @@ class ItemViewSet(viewsets.ModelViewSet):
     def create(self, request, **kwargs):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
+    def destroy(self, request, company_pk, pk,):
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
 
 class CompanyTypeItem(viewsets.ModelViewSet):
     """
@@ -342,6 +348,9 @@ class CompanyTypeItem(viewsets.ModelViewSet):
             return Response(request.data, status=status.HTTP_201_CREATED)
         else:
             return Response({"Error":serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+        def destroy(self, request, pk, company_pk):
+            return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class BrandItem(viewsets.ModelViewSet):
@@ -425,6 +434,9 @@ class BrandItem(viewsets.ModelViewSet):
             return Response(request.data, status=status.HTTP_201_CREATED)
         else:
             return Response({"Error":serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+        def destroy(self, request, pk, company_pk, typeitem_pk,):
+            return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class LostItemView(APIView):

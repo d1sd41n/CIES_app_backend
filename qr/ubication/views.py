@@ -1,7 +1,7 @@
 from django.db.models import Q
 from django.db.models.functions import Lower
 from django.shortcuts import get_object_or_404
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from rest_framework.filters import SearchFilter
 from dry_rest_permissions.generics import DRYPermissions
 from rest_framework.response import Response
@@ -45,6 +45,9 @@ class CountryViewSet(viewsets.ModelViewSet):
         serializer = CountrySerializer(country)
         return Response(serializer.data)
 
+    def destroy(self, request, pk, ):
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
 
 class ProvinceViewSet(viewsets.ModelViewSet):
     """
@@ -66,12 +69,15 @@ class ProvinceViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(provinces, many=True)
         return Response(serializer.data)
 
-    def retrieve(self, request, pk, country_pk=None):
+    def retrieve(self, request, pk, country_pk):
         province = get_object_or_404(Province,
                                    Q(pk=pk) &
                                    Q(country=country_pk))
         serializer = ProvinceSerializer(province)
         return Response(serializer.data)
+
+    def destroy(self, request, pk, country_pk):
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class CityViewSet(viewsets.ModelViewSet):
@@ -107,3 +113,6 @@ class CityViewSet(viewsets.ModelViewSet):
                                  Q(pk=pk))
         serializer = CitySerializer(city)
         return Response(serializer.data)
+
+    def destroy(self, request, pk, country_pk, province_pk):
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
