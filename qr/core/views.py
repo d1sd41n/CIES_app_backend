@@ -305,7 +305,7 @@ class SeatUserViewSet(viewsets.ModelViewSet):
                       is_staff=F('user__is_staff'),
                       is_active=F('user__is_active'),
                       date_joined=F('user__date_joined'),
-                      type=F('user__groups'),
+                      type=F('user__groups__name'),
                       id=F('user__id'))
         return users
 
@@ -408,6 +408,7 @@ class SeatUserViewSet(viewsets.ModelViewSet):
         data["is_staff"] = False
         data["is_active"] = True
         data["seat"] = seat_pk
+        data["user"] = user.id
 
         # verificasion si hay contraceñas(si se va a cambiar la pass)
         pval = True

@@ -64,7 +64,7 @@ class UserSerializerEdit(serializers.ModelSerializer):
     class Meta:
         model = UserPermissions
         fields = '__all__'
-        read_only_fields = ('date_joined', 'last_login', 'enabled', 'password')
+        read_only_fields = ('date_joined', 'last_login', 'enabled', 'password', 'username')
 
 
 class UserSerializerListCustom(serializers.Serializer):
@@ -76,7 +76,7 @@ class UserSerializerListCustom(serializers.Serializer):
     date_joined = serializers.DateTimeField()
     dni = serializers.CharField(max_length=100)
     email = serializers.CharField(max_length=100)
-    type = serializers.CharField(max_length=10)
+    type = serializers.CharField(max_length=250)
 
 
 class UserSerializerDetail(serializers.ModelSerializer):
