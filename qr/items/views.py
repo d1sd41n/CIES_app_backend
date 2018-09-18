@@ -1,5 +1,5 @@
 from django.db.models import F, Q
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db.models.functions import Lower
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -189,11 +189,12 @@ class ItemViewSet(viewsets.ModelViewSet):
     (http://localhost:8000/items/companies/pk/items/?search=owner__dni)
 
     se filtra usando los campos:
-    type item
-    brand
-    owner name
-    owner last_name
-    owner dni"""
+    con el codigo de codes
+
+    usando search_code como variable de busqueda.
+
+    ejemplo:
+    http://localhost:8000/items/companies/1/items/?search_code=ad6e1ec9-fa89-486d-9328-6e9362d34162"""
 
     permission_classes = (DRYPermissions,)
     queryset = Item.objects.all()
@@ -219,15 +220,16 @@ class ItemViewSet(viewsets.ModelViewSet):
     def list(self, request, company_pk):
         items = Item.objects.filter(type_item__company__id=company_pk,
                                     enabled=True)
-        query = self.request.GET.get("search")
+        query = self.request.GET.get("search_code")
         if query:
             items = items.filter(
-                Q(owner__dni__iexact=query) |
-                Q(type_item__kind__iexact=query) |
-                Q(owner__first_name__iexact=query) |
-                Q(owner__last_name__iexact=query) |
-                Q(brand__brand__iexact=query)
+                Q(code__pk=query)
             ).distinct()
+            try:
+                if (not len(items)):
+                    return Response({"Error":{"item":"Item no encontrado"}},status=status.HTTP_404_NOT_FOUND)
+            except ValidationError:
+                return Response({"Error":{"search_code":"Codigo invalido"}},status=status.HTTP_404_NOT_FOUND)
         items = self.queryAnnotate(items)
         serializer = ItemSerializer(items, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -443,7 +445,7 @@ class LostItemView(APIView):
     """
     En este endpoint se listan todos los objetos perdidos,
 
-    **filtros pendientes**"""
+    """
     queryset = Item.objects.all()
     serializer_class = ItemSerializer
     permission_classes = (DRYPermissions,)
