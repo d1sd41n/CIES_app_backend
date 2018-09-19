@@ -314,6 +314,15 @@ class SeatUserViewSet(viewsets.ModelViewSet):
             seat=seat_pk,
             seat__company=company_pk
         ).order_by(Lower('user__username'))
+        query = self.request.GET.get("search")
+        if query:
+            queryset_list = queryset_list.filter(
+                        Q(user__username__icontains=query) |
+                        Q(user__first_name__icontains=query) |
+                        Q(user__last_name__icontains=query) |
+                        Q(user__email__icontains=query) |
+                        Q(dni__icontains=query)
+                        ).distinct()
         users = self.queryAnnotate(queryset_list)
         serializer = UserSerializerListCustom(users, many=True)
         return Response(serializer.data)

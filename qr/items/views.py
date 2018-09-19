@@ -220,6 +220,17 @@ class ItemViewSet(viewsets.ModelViewSet):
     def list(self, request, company_pk):
         items = Item.objects.filter(type_item__company__id=company_pk,
                                     enabled=True)
+        query = self.request.GET.get("search")
+        if query:
+            items = items.filter(
+                        Q(owner__dni__iexact=query) |
+                        Q(type_item__kind__iexact=query) |
+                        Q(owner__first_name__iexact=query) |
+                        Q(owner__last_name__iexact=query) |
+                        Q(brand__brand__iexact=query)
+                        ).distinct()
+            if (not len(items)):
+                return Response({"Error":{"item":"Item no encontrado"}},status=status.HTTP_404_NOT_FOUND)
         query = self.request.GET.get("search_code")
         if query:
             items = items.filter(
@@ -386,6 +397,11 @@ class BrandItem(viewsets.ModelViewSet):
             type_item=typeitem_pk,
             enabled=True
         ).order_by(Lower('brand'))
+        query = self.request.GET.get("search")
+        if query:
+            queryset_list = queryset_list.filter(
+                        Q(brand__icontains=query)
+                        ).distinct()
         brands = self.queryAnnotate(queryset_list)
         return Response(brands)
 
