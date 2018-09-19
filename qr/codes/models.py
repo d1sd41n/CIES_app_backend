@@ -4,7 +4,7 @@ from django.db import models
 from django.db.models import Q
 
 from codes.managers import CodeManager
-from core.models import Seat
+from core.models import CustomUser, Seat
 
 
 class Code(models.Model):

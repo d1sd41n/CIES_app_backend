@@ -4,7 +4,7 @@ from django.db.models import Q
 from django.utils import timezone
 
 from codes.models import Code
-from core.models import Company, Seat, Visitor
+from core.models import Company, CustomUser, Seat, Visitor
 
 from .managers import (BrandManager, CheckinManager, ItemManager,
                        LostItemManager, TypeItemManager)
@@ -101,7 +101,8 @@ class Brand(models.Model):
 
 
 class Item(models.Model):
-    type_item = models.ForeignKey(TypeItem, on_delete=models.CASCADE)
+    type_item = models.ForeignKey(
+        TypeItem, on_delete=models.CASCADE, blank=True, null=True)
     code = models.OneToOneField(Code, on_delete=models.CASCADE)
     owner = models.ForeignKey(Visitor, on_delete=models.CASCADE)
     brand = models.ForeignKey(Brand, on_delete=models.CASCADE,
@@ -189,25 +190,6 @@ class LostItem(models.Model):
 
     def has_object_read_permission(self, request):
         return True
-
-    def has_object_write_permission(self, request):
-        return True
-
-    @staticmethod
-    def has_write_permission(request):
-        developer_permission = request.user.groups.filter(Q(name="Developer"))
-        if developer_permission:
-            return True
-        group = request.user.groups.filter(Q(name="Manager"))
-        parameters = [parameter for parameter in request.path_info
-                      if parameter.isdigit()]
-        user_company = str(CustomUser.objects.get(
-            user=request.user).seat.company)
-        user_seat = str(CustomUser.objects.get(user=request.user).seat)
-        if (group and user_company == parameters[0] and
-                user_seat == parameters[1]):
-            return True
-        return False
 
     def __str__(self):
         return self.item.type_item.kind

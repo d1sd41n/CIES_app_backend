@@ -1,7 +1,7 @@
 from django.db import models
 from django.db.models import Q
 
-from core.models import Company
+from core.models import Company, CustomUser
 
 from .managers import DisabledManager
 

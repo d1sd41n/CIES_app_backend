@@ -1,6 +1,8 @@
 from django.db import models
 from django.db.models import Q
 
+from core.models import Company, CustomUser
+
 from .managers import (CityManager, CountryManager, LocationManager,
                        RegionManager)
 
