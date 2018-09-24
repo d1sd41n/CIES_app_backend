@@ -317,12 +317,12 @@ class SeatUserViewSet(viewsets.ModelViewSet):
         query = self.request.GET.get("search")
         if query:
             queryset_list = queryset_list.filter(
-                        Q(user__username__icontains=query) |
-                        Q(user__first_name__icontains=query) |
-                        Q(user__last_name__icontains=query) |
-                        Q(user__email__icontains=query) |
-                        Q(dni__icontains=query)
-                        ).distinct()
+                Q(user__username__icontains=query) |
+                Q(user__first_name__icontains=query) |
+                Q(user__last_name__icontains=query) |
+                Q(user__email__icontains=query) |
+                Q(dni__icontains=query)
+            ).distinct()
         users = self.queryAnnotate(queryset_list)
         serializer = UserSerializerListCustom(users, many=True)
         return Response(serializer.data)
@@ -503,26 +503,30 @@ class CompanyVisitor(viewsets.ModelViewSet):
 
     def create(self, request, company_pk):
         data = request.data.copy()
-        data["company"] = company_pk
         try:
-            Company.objects.get(id=company_pk)
+            company = Company.objects.get(id=company_pk)
         except ObjectDoesNotExist:
-            return Response({"Error": {"compnany": "la compañia no existe"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Error": {"company": "la compañia no existe"}}, status=status.HTTP_400_BAD_REQUEST)
         serializer = VisitorSerializer(data=data)
         if serializer.is_valid():
+            serializer.validated_data['company'] = company
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response({"Error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
     def update(self, request, pk, company_pk, **kwargs):
         data = request.data.copy()
-        data["company"] = company_pk
+        try:
+            company = Company.objects.get(id=company_pk)
+        except ObjectDoesNotExist:
+            return Response({"Error": {"company": "la compañia no existe"}}, status=status.HTTP_400_BAD_REQUEST)
         try:
             visitor = Visitor.objects.get(id=pk, company__id=company_pk)
         except ObjectDoesNotExist:
             return Response({"Error": "el visitante no existe"}, status=status.HTTP_400_BAD_REQUEST)
         serializer = VisitorSerializer(visitor, data=data)
         if serializer.is_valid():
+            serializer.validated_data['company'] = company
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
