@@ -27,7 +27,7 @@ class Code(models.Model):
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
         user_company = str(CustomUser.objects.get(
-            user=request.user).seat.company)
+            user=request.user).seat.company.id)
         if group and user_company == parameters[0]:
             return True
         return False
@@ -48,7 +48,7 @@ class Code(models.Model):
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
         user_company = str(CustomUser.objects.get(
-            user=request.user).seat.company)
+            user=request.user).seat.company.id)
         if group and user_company == parameters[0]:
             return True
         return False
