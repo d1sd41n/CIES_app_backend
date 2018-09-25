@@ -107,7 +107,7 @@ class City(models.Model):
 class Location(models.Model):
     """Almacena la latitud y longitud de algun objeto
     """
-    address = models.CharField(max_length=100, unique=True)
+    address = models.CharField(max_length=100)
     latitude = models.FloatField(blank=True, null=True)
     longitude = models.FloatField(blank=True, null=True)
     city = models.ForeignKey(City, on_delete=models.CASCADE)
@@ -122,8 +122,8 @@ class Location(models.Model):
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
         user_company = str(CustomUser.objects.get(
-            user=request.user).seat.company)
-        user_seat = str(CustomUser.objects.get(user=request.user).seat)
+            user=request.user).seat.company.id)
+        user_seat = str(CustomUser.objects.get(user=request.user).seat.id)
         if (group and user_company == parameters[0]
                 and user_seat == parameters[1]):
             return True

@@ -4,7 +4,7 @@ from django.db import models
 from django.db.models import Q
 
 from codes.managers import CodeManager
-from core.models import Seat
+from core.models import CustomUser, Seat
 
 
 class Code(models.Model):
@@ -27,7 +27,7 @@ class Code(models.Model):
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
         user_company = str(CustomUser.objects.get(
-            user=request.user).seat.company)
+            user=request.user).seat.company.id)
         if group and user_company == parameters[0]:
             return True
         return False
@@ -48,7 +48,7 @@ class Code(models.Model):
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
         user_company = str(CustomUser.objects.get(
-            user=request.user).seat.company)
+            user=request.user).seat.company.id)
         if group and user_company == parameters[0]:
             return True
         return False

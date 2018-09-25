@@ -27,37 +27,27 @@ class Company(models.Model):
     enabled = models.BooleanField(default=True)
     objects = CompanyManager()
 
-    @staticmethod
     def has_read_permission(request):
         developer_permission = request.user.groups.filter(Q(name="Developer"))
         if developer_permission:
             return True
-        group = request.user.groups.filter(Q(name="Manager"))
-        parameters = [parameter for parameter in request.path_info
-                      if parameter.isdigit()]
-        user_company = str(CustomUser.objects.get(
-            user=request.user).seat.company)
-        if group and user_company == parameters[0]:
-            return True
         return False
 
     def has_object_read_permission(self, request):
-        return True
-
-    def has_object_write_permission(self, request):
-        return True
-
-    @staticmethod
-    def has_write_permission(request):
         developer_permission = request.user.groups.filter(Q(name="Developer"))
         if developer_permission:
             return True
-        group = request.user.groups.filter(Q(name="Manager"))
-        parameters = [parameter for parameter in request.path_info
-                      if parameter.isdigit()]
-        user_company = str(CustomUser.objects.get(
-            user=request.user).seat.company)
-        if group and user_company == parameters[0]:
+        return False
+
+    def has_object_write_permission(self, request):
+        developer_permission = request.user.groups.filter(Q(name="Developer"))
+        if developer_permission:
+            return True
+        return False
+
+    def has_write_permission(request):
+        developer_permission = request.user.groups.filter(Q(name="Developer"))
+        if developer_permission:
             return True
         return False
 
@@ -79,7 +69,6 @@ class Seat(models.Model):
     enabled = models.BooleanField(default=True)
     objects = SeatManager()
 
-    @staticmethod
     def has_read_permission(request):
         developer_permission = request.user.groups.filter(Q(name="Developer"))
         if developer_permission:
@@ -88,20 +77,41 @@ class Seat(models.Model):
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
         user_company = str(CustomUser.objects.get(
-            user=request.user).seat.company)
-        user_seat = str(CustomUser.objects.get(user=request.user).seat)
+            user=request.user).seat.company.id)
+        if (group and user_company == parameters[0]):
+            return True
+        return False
+
+    def has_object_read_permission(self, request):
+        developer_permission = request.user.groups.filter(Q(name="Developer"))
+        if developer_permission:
+            return True
+        group = request.user.groups.filter(Q(name="Manager"))
+        parameters = [parameter for parameter in request.path_info
+                      if parameter.isdigit()]
+        user_company = str(CustomUser.objects.get(
+            user=request.user).seat.company.id)
+        user_seat = str(CustomUser.objects.get(user=request.user).seat.id)
         if (group and user_company == parameters[0]
                 and user_seat == parameters[1]):
             return True
         return False
 
-    def has_object_read_permission(self, request):
-        return True
-
     def has_object_write_permission(self, request):
-        return True
+        developer_permission = request.user.groups.filter(Q(name="Developer"))
+        if developer_permission:
+            return True
+        group = request.user.groups.filter(Q(name="Manager"))
+        parameters = [parameter for parameter in request.path_info
+                      if parameter.isdigit()]
+        user_company = str(CustomUser.objects.get(
+            user=request.user).seat.company.id)
+        user_seat = str(CustomUser.objects.get(user=request.user).seat.id)
+        if (group and user_company == parameters[0]
+                and user_seat == parameters[1]):
+            return True
+        return False
 
-    @staticmethod
     def has_write_permission(request):
         developer_permission = request.user.groups.filter(Q(name="Developer"))
         if developer_permission:
@@ -110,10 +120,8 @@ class Seat(models.Model):
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
         user_company = str(CustomUser.objects.get(
-            user=request.user).seat.company)
-        user_seat = str(CustomUser.objects.get(user=request.user).seat)
-        if (group and user_company == parameters[0]
-                and user_seat == parameters[1]):
+            user=request.user).seat.company.id)
+        if (group and user_company == parameters[0]):
             return True
         return False
 
@@ -147,8 +155,8 @@ class CustomUser(models.Model):
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
         user_company = str(CustomUser.objects.get(
-            user=request.user).seat.company)
-        user_seat = str(CustomUser.objects.get(user=request.user).seat)
+            user=request.user).seat.company.id)
+        user_seat = str(CustomUser.objects.get(user=request.user).seat.id)
         if (group and user_company == parameters[0]
                 and user_seat == parameters[1]):
             return True
@@ -170,8 +178,8 @@ class CustomUser(models.Model):
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
         user_company = str(CustomUser.objects.get(
-            user=request.user).seat.company)
-        user_seat = str(CustomUser.objects.get(user=request.user).seat)
+            user=request.user).seat.company.id)
+        user_seat = str(CustomUser.objects.get(user=request.user).seat.id)
         if (group and user_company == parameters[0]
                 and user_seat == parameters[1]):
             return True
@@ -192,8 +200,8 @@ class UserPermissions(User):
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
         user_company = str(CustomUser.objects.get(
-            user=request.user).seat.company)
-        user_seat = str(CustomUser.objects.get(user=request.user).seat)
+            user=request.user).seat.company.id)
+        user_seat = str(CustomUser.objects.get(user=request.user).seat.id)
         if (group and user_company == parameters[0]
                 and user_seat == parameters[1]):
             return True
@@ -215,8 +223,8 @@ class UserPermissions(User):
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
         user_company = str(CustomUser.objects.get(
-            user=request.user).seat.company)
-        user_seat = str(CustomUser.objects.get(user=request.user).seat)
+            user=request.user).seat.company.id)
+        user_seat = str(CustomUser.objects.get(user=request.user).seat.id)
         if (group and user_company == parameters[0]
                 and user_seat == parameters[1]):
             return True
@@ -245,7 +253,7 @@ class Visitor(models.Model):
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
         user_company = str(CustomUser.objects.get(
-            user=request.user).seat.company)
+            user=request.user).seat.company.id)
         if not group_limit and user_company == parameters[0]:
             return True
         return False
@@ -265,7 +273,7 @@ class Visitor(models.Model):
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
         user_company = str(CustomUser.objects.get(
-            user=request.user).seat.company)
+            user=request.user).seat.company.id)
         if not group_limit and user_company == parameters[0]:
             return True
         return False

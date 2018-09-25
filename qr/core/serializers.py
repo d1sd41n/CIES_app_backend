@@ -11,8 +11,7 @@ class VisitorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Visitor
         fields = ('__all__')
-        read_only_fields = ('enabled',)
-        extra_kwargs = {'company': {'write_only': True}}
+        read_only_fields = ('enabled', 'company')
 
 
 class CompanySerializer(serializers.ModelSerializer):
@@ -64,7 +63,8 @@ class UserSerializerEdit(serializers.ModelSerializer):
     class Meta:
         model = UserPermissions
         fields = '__all__'
-        read_only_fields = ('date_joined', 'last_login', 'enabled', 'password', 'username')
+        read_only_fields = ('date_joined', 'last_login',
+                            'enabled', 'password', 'username')
 
 
 class UserSerializerListCustom(serializers.Serializer):

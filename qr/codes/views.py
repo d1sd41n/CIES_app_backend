@@ -15,7 +15,7 @@ from rest_framework.views import APIView
 
 from codes.models import Code
 from codes.serializers import CodesSerializer, GenerateCodesSerializer
-from core.models import Seat
+from core.models import CustomUser, Seat
 from dry_rest_permissions.generics import DRYPermissions
 from items.models import Item
 
@@ -81,7 +81,11 @@ class GenerateCodes(APIView):
                                            Q(name="Security Boss"))
         parameters = [parameter for parameter in request.path_info
                       if parameter.isdigit()]
-        if group == parameters[0]:
+        user_company = str(CustomUser.objects.get(
+            user=request.user).seat.company.id)
+        user_seat = str(CustomUser.objects.get(user=request.user).seat.id)
+        if (group and user_company == parameters[0]
+                and user_seat == parameters[1]):
             Code.objects.bulk_create(code_list)
             p.save()
             pdf = buffer.getvalue()

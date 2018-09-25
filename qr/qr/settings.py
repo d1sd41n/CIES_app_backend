@@ -100,7 +100,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'raven.contrib.django.raven_compat',
-    'rest_framework_swagger',
+    'drf_yasg',
     'debug_toolbar',
     'items',
     'codes',

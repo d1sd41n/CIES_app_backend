@@ -1,19 +1,12 @@
-from core.models import Visitor
-from disabled.models import Disabled
-from disabled.serializers import (
-                                  DisabledModelSerializer
-                                  )
 from django.shortcuts import get_object_or_404
-from dry_rest_permissions.generics import DRYPermissions
-from items.models import (
-                        TypeItem,
-                        Brand,
-                        Item,
-                        LostItem,
-                        )
+from rest_framework import status, viewsets
 from rest_framework.response import Response
-from rest_framework import status
-from rest_framework import viewsets
+
+from core.models import CustomUser, Visitor
+from disabled.models import Disabled
+from disabled.serializers import DisabledModelSerializer
+from dry_rest_permissions.generics import DRYPermissions
+from items.models import Brand, Item, LostItem, TypeItem
 
 
 class DisableModelsViewSet(viewsets.ModelViewSet):
@@ -63,18 +56,20 @@ class DisableModelsViewSet(viewsets.ModelViewSet):
 
     def retrieve(self, request, pk, company_pk):
         r_queryset = get_object_or_404(
-                    Disabled,
-                    id=pk,
-                    company__id=company_pk
-                    )
+            Disabled,
+            id=pk,
+            company__id=company_pk
+        )
         serializer = DisabledModelSerializer(r_queryset)
         return Response(serializer.data)
 
     def create(self, request, company_pk):
         data = request.data.copy()
+        data['company'] = company_pk
         model = request.data["model"]
         serializer = DisabledModelSerializer(data=data)
-        user_company = str(request.user.customuser.seathasuser.seat.company_id)
+        user_company = str(CustomUser.objects.get(
+            user=request.user).seat.company.id)
         if serializer.is_valid():
             if data['company'] != user_company:
                 return Response("El usuario no pertenece a esta compañía",
@@ -84,9 +79,9 @@ class DisableModelsViewSet(viewsets.ModelViewSet):
                       'lostitem': LostItem}
             model_name = models[model]
             register_to_disable = get_object_or_404(
-                                  model_name,
-                                  id=data["fk_object"],
-                                  )
+                model_name,
+                id=data["fk_object"],
+            )
             if serializer.validated_data['action']:
                 if not register_to_disable.enabled:
                     register_to_disable.enabled = True
@@ -104,3 +99,6 @@ class DisableModelsViewSet(viewsets.ModelViewSet):
             return Response(serializer.data,
                             status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def update(self, request, company_pk, pk):
+        return Response("Este método no está permitido", status=status.HTTP_405_METHOD_NOT_ALLOWED)
