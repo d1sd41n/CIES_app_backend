@@ -44,6 +44,8 @@ class ChekinSerializer(serializers.Serializer):
     seat_name = serializers.CharField(max_length=255)
     item_id = serializers.IntegerField()
     type_item = serializers.CharField(max_length=255)
+    reference = serializers.CharField(max_length=30)
+    brand = serializers.CharField(max_length=30)
     lost = serializers.BooleanField(default=False)
     owner_name = serializers.CharField(max_length=50)
     owner_last_name = serializers.CharField(max_length=50)

@@ -73,12 +73,14 @@ class CheckInViewSet(viewsets.ModelViewSet):
             .values('id', 'date', 'go_in') \
             .annotate(seat_id=F('seat__id'), item_id=F('item'),
                       seat_dir=F('seat__address__address'),
-                      owner_last_name=F('item__owner__last_name'),
+                      seat_name=F('seat__name'),
                       owner_dni=F('item__owner__dni'),
-                      type_item=F('item__type_item__kind'),
                       owner_name=F('item__owner__first_name'),
-                      lost=F('item__lost'),
-                      seat_name=F('seat__name'))
+                      owner_last_name=F('item__owner__last_name'),
+                      type_item=F('item__type_item__kind'),
+                      brand=F('item__brand'),
+                      reference=F('item__reference'),
+                      lost=F('item__lost'))
         return checks
 
     def list(self, request, company_pk, seat_pk):
@@ -336,12 +338,12 @@ class CompanyTypeItem(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def create(self, request, company_pk):
-        data = request.data.copy()
+        data = request.data
+        serializer = TypeItemSerializer(data=data)
         try:
             company = Company.objects.get(id=company_pk)
         except ObjectDoesNotExist:
-            return Response({"Error": {"company": "la compañia no existe"}}, status=status.HTTP_400_BAD_REQUEST)
-        serializer = TypeItemSerializer(data=data)
+            return Response({"Error": {"company": "La compañía no está registrada"}}, status=status.HTTP_400_BAD_REQUEST)
         if serializer.is_valid():
             serializer.validated_data['company'] = company
             serializer.save()
