@@ -78,7 +78,7 @@ class CheckInViewSet(viewsets.ModelViewSet):
                       owner_name=F('item__owner__first_name'),
                       owner_last_name=F('item__owner__last_name'),
                       type_item=F('item__type_item__kind'),
-                      brand=F('item__brand'),
+                      brand=F('item__brand__brand'),
                       reference=F('item__reference'),
                       lost=F('item__lost'))
         return checks
