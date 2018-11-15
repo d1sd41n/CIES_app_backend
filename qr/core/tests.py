@@ -2,34 +2,85 @@ from rest_framework.test import APITestCase
 from django.test import tag
 from rest_framework import status
 import core
-from core.models import CustomUser
+from django.contrib.auth.models import User
 from core.serializers import CustomUserSerializer
 from django.shortcuts import get_object_or_404
+from rest_framework.test import force_authenticate
+from rest_framework.test import APIClient
+from rest_framework.authtoken.models import Token
+from django.contrib.auth.models import Group
+from random import randint
+from core.models import (Visitor,
+                         CustomUser
+                        )
 
 @tag('TestVisitor')
 class TestVisitor(APITestCase):
-    """Esta clase testea la creacion y la view de un visitante"""
+    """Esta clase testea la creacion y la view de un visitante
+       Ejemplo de ejecusion: 'manage.py test --tag=TestVisitor' """
 
     def setUp(self):
-        print("starting Visitor Test")
+        print("\n#############################")
+        print("####Starting Visitor Test####")
+        print("#############################\n")
         self.serializer_attributes = core.models.Visitor.objects.mockup(api=True)
         self.serializer = core.serializers.VisitorSerializer(instance=self.serializer_attributes)
+        self.client = APIClient()
+        self.user = User.objects.create_superuser('admin', 'admin@admin.com', 'admin123')
+        self.token = Token.objects.get(user=self.user)
+        group = Group.objects.create(name="Developer")
+        group.user_set.add(self.user)
 
     def test_create_visitor(self):
-        print("starting Visitor create Test")
+        print("---starting Visitor create Test---")
         visitor = core.managers.VisitorManager().mockup()
-        print("Visitor model test was correct")
+        print("---Visitor model test was correct---")
         return visitor
 
-    def test_create_visitor_api(self):
-        print("starting Visitor Test api")
+    def test_visitor_api(self):
+        print("---starting Visitor Test api---")
         url = '/core/companies/' + str(self.serializer_attributes['company'].id) + '/visitors/'
         data = self.serializer.data
-        response = self.client.post(url, data, format='json')
-        data['id'] = response.data['id']
-        self.assertEqual(response.data, data)
+        response = self.client.post(url, data, format='json', HTTP_AUTHORIZATION='Token {}'.format(self.token))
+
+        print("   1.Testing POST response status_code:")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        print("Visitors serializer and API tests were correct")
+        print("   ->POST response status_code was correct\n")
+
+        print("   2.Testing the saved data:")
+        id = response.data["id"]
+        visitor = Visitor.objects.get(id=id).__dict__
+        visitor["company"] = visitor.pop("company_id")
+        for key in list(data.keys()):
+            self.assertEqual(data[key], visitor[key])
+        print("   ->saved data were correct\n")
+
+        print("   3.Testing GET response status_code:")
+        url = '/core/companies/' + str(self.serializer_attributes['company'].id) + '/visitors/'+str(id)+"/"
+        response = self.client.get(url, data, format='json', HTTP_AUTHORIZATION='Token {}'.format(self.token))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        print("   ->Testing GET response status_code were correct\n")
+
+        print("   4.Testing GET response's data:")
+        visitor = response.data
+        for key in list(data.keys()):
+            self.assertEqual(data[key], visitor[key])
+        print("   ->GET response's data were correct\n")
+
+        print("   5.Testing PUT response status_code:")
+        data["email"] = 'Email'+str(randint(100, 999))+'@test.com'
+        response = self.client.put(url, data, format='json', HTTP_AUTHORIZATION='Token {}'.format(self.token))
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        print("   ->Testing PUT response status_code were correct\n")
+
+        print("   6.Testing the new visitor's data:")
+        visitor = Visitor.objects.get(id=id).__dict__
+        visitor["company"] = visitor.pop("company_id")
+        for key in list(data.keys()):
+            self.assertEqual(data[key], visitor[key])
+        print("   ->saved data were correct\n")
+
+        print("---Visitors serializer and API tests were correct---")
 
 
 @tag('TestCompany')

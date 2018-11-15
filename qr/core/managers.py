@@ -104,12 +104,13 @@ class CustomUserManager(models.Manager):
 class VisitorManager(models.Manager):
     def mockup(self, api=False):
         selection = {1: True, 2: False}
-        data = {'id': None,
-                'first_name': "visitante" + str(randint(1, 9999)),
+        data = {'first_name': "visitante" + str(randint(1, 9999)),
                 'last_name': "Apellido" + str(randint(1, 9999)),
                 'is_active': selection[randint(1, 2)],
                 'dni': randint(111111, 999999),
-                'company': core.models.Company.objects.mockup()}
+                'company': core.models.Company.objects.mockup(),
+                'email':'email@test.com',
+                'phone':'3234544'}
         if api:
             return data
         return self.create_visitor(data)
