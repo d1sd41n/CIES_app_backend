@@ -501,7 +501,7 @@ class CompanyVisitor(viewsets.ModelViewSet):
         serializer = VisitorSerializer(r_queryset)
         return Response(serializer.data)
 
-    def create(self, request, company_pk):
+    def create(self, request, company_pk, **kwargs):
         data = request.data.copy()
         try:
             company = Company.objects.get(id=company_pk)

@@ -107,6 +107,7 @@ INSTALLED_APPS = [
     'ubication',
     'core',
     'disabled',
+    'emailing',
     # third party
     'rest_framework',
     'dry_rest_permissions',
@@ -240,3 +241,12 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.TokenAuthentication',
     ),
 }
+
+################################
+#######   Email  ###############
+################################
+EMAIL_HOST = 'smtp.sendgrid.net'
+EMAIL_HOST_USER = 'ernestobetsabet'
+EMAIL_HOST_PASSWORD = 'putamierda123'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
