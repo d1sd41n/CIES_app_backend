@@ -67,6 +67,7 @@ class Seat(models.Model):
     email = models.EmailField(blank=True)
     name = models.CharField(max_length=100, unique=True)
     enabled = models.BooleanField(default=True)
+    phone = models.CharField(max_length=15, unique=True, blank=True)
     objects = SeatManager()
 
     def has_read_permission(request):
