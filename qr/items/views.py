@@ -261,6 +261,22 @@ class ItemViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def update(self, request, company_pk, pk, **kwargs):
+
+        # esta es una solucion temporal al cambio de estado de obejto perdido
+        #############################################################
+        if len(request.data)==1 and 'lost' in request.data:
+            item = get_object_or_404(
+                    Item,
+                    id = pk,
+                    type_item__company = company_pk
+                    )
+            item.lost = request.data['lost']
+            item.save()
+            return Response({"Operacion correcta": "cambiado estado de item"},
+                            status=status.HTTP_201_CREATED)
+        ################################################################
+
+
         if 'type_item' in request.data:
             try:
                 typeitem = TypeItem.objects.get(
