@@ -58,7 +58,7 @@ class EmailLostItem(APIView):
         last_name = item.owner.last_name
         id_visitor = item.owner.last_name
         vivitor_email = item.owner.email
-        date = str(datetime.datetime.today()).split('.')[0]
+        date = str(datetime.datetime.today().strftime('%d-%m-%Y %H:%M"'))
         day_date = dias[datetime.datetime.today().weekday()]
         company_nit = item.seat_registration.company.nit
         company_name = item.seat_registration.company.name
