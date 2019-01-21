@@ -89,3 +89,10 @@ target/
 *.sqlite3
 migrations/
 qr/img.png
+
+## Env
+
+.env
+.envs/*
+!.envs/.dev/
+env/

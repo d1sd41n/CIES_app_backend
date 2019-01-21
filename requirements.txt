@@ -20,7 +20,6 @@ Pillow==4.3.0
 psycopg2==2.7.3.2
 pytz==2017.3
 qrcode==5.3
-raven==6.6.0
 reportlab==3.4.0
 requests==2.18.4
 simplejson==3.13.2
