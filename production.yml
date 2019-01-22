@@ -1,0 +1,50 @@
+version: '3'
+
+services:
+  nginx:
+    restart: always
+    image: nginx:1.13
+    ports:
+      - "80:80"
+    volumes:
+      - ./qr:/qr
+      - ./nginx:/etc/nginx/conf.d
+    depends_on:
+      - web
+    networks:
+      - nginx_network
+  db:
+    restart: always
+    image:  postgres:10
+    networks:
+      - db_network
+    volumes:
+      - dev_postgres_volume:/var/lib/postgresql/data
+    env_file:
+      - ./.envs/.dev/.postgres
+
+  web:
+    restart: always
+    build:
+      context: .
+      dockerfile: ./compose/production/django/Dockerfile
+    command: bash -c "python manage.py collectstatic --noinput && python manage.py makemigrations core  && python manage.py makemigrations codes && python manage.py makemigrations codes && python manage.py makemigrations disabled && python manage.py makemigrations ubication && python manage.py makemigrations items && python manage.py migrate && gunicorn qr.wsgi -b 0.0.0.0:80"
+    volumes:
+      - ./qr:/qr
+    depends_on:
+      - db
+    networks:
+      - db_network
+      - nginx_network
+    env_file:
+      - ./.envs/.production/.django
+      - ./.envs/.production/.postgres
+
+networks:
+  db_network:
+    driver: bridge
+  nginx_network:
+    driver: bridge
+
+volumes:
+  dev_postgres_volume:
