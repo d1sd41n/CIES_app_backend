@@ -328,9 +328,6 @@ class SeatUserViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def create(self, request, company_pk, seat_pk):
-        print("#####################################")
-        print(request.data)
-        print("#####################################")
         data = request.data.copy()
         data["is_superuser"] = False
         data["is_staff"] = False
