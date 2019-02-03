@@ -3,12 +3,14 @@ version: '3'
 services:
   nginx:
     restart: always
-    image: nginx:1.13
+    image: nginx:latest
     ports:
+      - "443:443"
       - "80:80"
     volumes:
       - ./qr:/qr
       - ./nginx:/etc/nginx/conf.d
+      - ./sslfiles:/etc/nginx/ssl
     depends_on:
       - web
     networks:
@@ -28,7 +30,7 @@ services:
     build:
       context: .
       dockerfile: ./compose/production/django/Dockerfile
-    command: bash -c "python manage.py collectstatic --noinput && python manage.py makemigrations core  && python manage.py makemigrations codes && python manage.py makemigrations codes && python manage.py makemigrations disabled && python manage.py makemigrations ubication && python manage.py makemigrations items && python manage.py migrate && gunicorn qr.wsgi -b 0.0.0.0:80"
+    command: bash -c "python manage.py collectstatic --noinput && python manage.py makemigrations core  && python manage.py makemigrations codes && python manage.py makemigrations codes && python manage.py makemigrations disabled && python manage.py makemigrations ubication && python manage.py makemigrations items && python manage.py migrate && gunicorn qr.wsgi -b 0.0.0.0:443"
     volumes:
       - ./qr:/qr
     depends_on:
