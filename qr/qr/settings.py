@@ -46,7 +46,6 @@ INSTALLED_APPS = [
     'emailing',
     # third party
     'rest_framework',
-    'dry_rest_permissions',
     'corsheaders',
     'rest_framework.authtoken',
 ]

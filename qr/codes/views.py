@@ -29,7 +29,6 @@ class CompanyCodes(viewsets.ReadOnlyModelViewSet):
     desde los codes de la sede.
 
     Se filtra por id de la sede"""
-    permission_classes = (DRYPermissions,)
     queryset = Code.objects.all()
     serializer_class = CodesSerializer
 

@@ -1,8 +1,9 @@
 from django.db.models.functions import Lower
 from rest_framework import serializers
 from rest_framework.authtoken.models import Token
+from django.contrib.auth.models import User
 
-from core.models import Company, CustomUser, Seat, UserPermissions, Visitor
+from core.models import Company, CustomUser, Seat, Visitor
 from ubication.models import Location
 
 
@@ -41,7 +42,7 @@ class SeatSerializerList(serializers.Serializer):
 class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = UserPermissions
+        model = User
         fields = (
             'id',
             'last_login',
@@ -61,7 +62,7 @@ class UserSerializer(serializers.ModelSerializer):
 class UserSerializerEdit(serializers.ModelSerializer):
 
     class Meta:
-        model = UserPermissions
+        model = User
         fields = '__all__'
         read_only_fields = ('date_joined', 'last_login',
                             'enabled', 'password', 'username')
@@ -85,7 +86,7 @@ class UserSerializerDetail(serializers.ModelSerializer):
     Y desde aqui solo se editan los datos de user"""
 
     class Meta:
-        model = UserPermissions
+        model = User
         fields = (
             'id',
             'last_login',

@@ -12,29 +12,6 @@ class Country(models.Model):
                                   null=True, blank=True)
     objects = CountryManager()
 
-    @staticmethod
-    def has_read_permission(request):
-        group = request.user.groups.filter(Q(name="Developer"))
-        if group:
-            return True
-        return False
-
-    def has_object_read_permission(self, request):
-        return True
-
-    def has_object_write_permission(self, request):
-        return True
-
-    @staticmethod
-    def has_write_permission(request):
-        group = request.user.groups.filter(Q(name="Developer"))
-        if group:
-            return True
-        return False
-
-    class Meta:
-        verbose_name_plural = "Countries"
-
     def __str__(self):
         return self.name
 
@@ -46,26 +23,6 @@ class Province(models.Model):
     country = models.ForeignKey(Country, on_delete=models.CASCADE)
     objects = RegionManager()
 
-    @staticmethod
-    def has_read_permission(request):
-        group = request.user.groups.filter(Q(name="Developer"))
-        if group:
-            return True
-        return False
-
-    def has_object_read_permission(self, request):
-        return True
-
-    def has_object_write_permission(self, request):
-        return True
-
-    @staticmethod
-    def has_write_permission(request):
-        group = request.user.groups.filter(Q(name="Developer"))
-        if group:
-            return True
-        return False
-
     def __str__(self):
         return self.name
 
@@ -76,26 +33,6 @@ class City(models.Model):
     name = models.CharField(max_length=50)
     province = models.ForeignKey(Province, on_delete=models.CASCADE)
     objects = CityManager()
-
-    @staticmethod
-    def has_read_permission(request):
-        group = request.user.groups.filter(Q(name="Developer"))
-        if group:
-            return True
-        return False
-
-    def has_object_read_permission(self, request):
-        return True
-
-    def has_object_write_permission(self, request):
-        return True
-
-    @staticmethod
-    def has_write_permission(request):
-        group = request.user.groups.filter(Q(name="Developer"))
-        if group:
-            return True
-        return False
 
     class Meta:
         verbose_name_plural = "Cities"
@@ -112,44 +49,6 @@ class Location(models.Model):
     longitude = models.FloatField(blank=True, null=True)
     city = models.ForeignKey(City, on_delete=models.CASCADE)
     objects = LocationManager()
-
-    @staticmethod
-    def has_read_permission(request):
-        developer_permission = request.user.groups.filter(Q(name="Developer"))
-        if developer_permission:
-            return True
-        group = request.user.groups.filter(Q(name="Manager"))
-        parameters = [parameter for parameter in request.path_info
-                      if parameter.isdigit()]
-        user_company = str(CustomUser.objects.get(
-            user=request.user).seat.company.id)
-        user_seat = str(CustomUser.objects.get(user=request.user).seat.id)
-        if (group and user_company == parameters[0]
-                and user_seat == parameters[1]):
-            return True
-        return False
-
-    def has_object_read_permission(self, request):
-        return True
-
-    def has_object_write_permission(self, request):
-        return True
-
-    @staticmethod
-    def has_write_permission(request):
-        developer_permission = request.user.groups.filter(Q(name="Developer"))
-        if developer_permission:
-            return True
-        group = request.user.groups.filter(Q(name="Manager"))
-        parameters = [parameter for parameter in request.path_info
-                      if parameter.isdigit()]
-        user_company = str(CustomUser.objects.get(
-            user=request.user).seat.company)
-        user_seat = str(CustomUser.objects.get(user=request.user).seat)
-        if (group and user_company == parameters[0]
-                and user_seat == parameters[1]):
-            return True
-        return False
 
     def __str__(self):
         return self.address + " " + str(self.city).capitalize()

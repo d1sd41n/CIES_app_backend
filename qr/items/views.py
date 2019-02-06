@@ -36,7 +36,6 @@ class CheckInViewSet(viewsets.ModelViewSet):
         para hacerlo:
 
         http://localhost:8000/items/companies/pk/seats/1pk/check/?search_item=ID_DEL_ITEM"""
-    permission_classes = (DRYPermissions,)
     queryset = CheckIn.objects.all()
     serializer_class = CheckInCreateSerializer
     filter_backends = [SearchFilter]
@@ -133,8 +132,6 @@ class RegisterItemViewSet(generics.CreateAPIView):
     </pre>
     }
     """
-
-    permission_classes = (DRYPermissions,)
     serializer_class = RegisterItem
 
     def post(self, request, company_pk, seat_pk):
@@ -202,7 +199,6 @@ class ItemViewSet(viewsets.ModelViewSet):
     ejemplo:
     http://localhost:8000/items/companies/1/items/?search_code=ad6e1ec9-fa89-486d-9328-6e9362d34162"""
 
-    permission_classes = (DRYPermissions,)
     queryset = Item.objects.all()
     serializer_class = ItemUpdateSerializer
     filter_backends = [SearchFilter]
@@ -322,7 +318,6 @@ class CompanyTypeItem(viewsets.ModelViewSet):
 
     se filtra con: kind
     """
-    permission_classes = (DRYPermissions,)
     queryset = TypeItem.objects.all().order_by(Lower('kind'))
     serializer_class = TypeItemSerializer
     filter_backends = [SearchFilter]
@@ -402,7 +397,6 @@ class BrandItem(viewsets.ModelViewSet):
     se filtra con brand
 
     """
-    permission_classes = (DRYPermissions,)
     queryset = Brand.objects.all().order_by(Lower('brand'))
     serializer_class = BrandSerializer
     filter_backends = [SearchFilter]
@@ -489,7 +483,6 @@ class LostItemView(APIView):
     """
     queryset = Item.objects.all()
     serializer_class = LostItemSerializer
-    permission_classes = (DRYPermissions,)
     filter_backends = [SearchFilter]
     search_fields = ['owner_dni']
 

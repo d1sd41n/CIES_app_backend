@@ -34,7 +34,6 @@ class CountryViewSet(viewsets.ModelViewSet):
     retrieve:
     Retorna un país con id específico
     """
-    permission_classes = (DRYPermissions,)
     queryset = Country.objects.all().order_by(Lower('name'))
     serializer_class = CountrySerializer
     filter_backends = [SearchFilter]
@@ -57,7 +56,6 @@ class ProvinceViewSet(viewsets.ModelViewSet):
     retrieve:
     Retorna una región con id específico
     """
-    permission_classes = (DRYPermissions,)
     queryset = Province.objects.all()
     serializer_class = ProvinceSerializer
     filter_backends = [SearchFilter]
@@ -88,7 +86,6 @@ class CityViewSet(viewsets.ModelViewSet):
     retrieve:
     Retorna una ciudad con id específico
     """
-    permission_classes = (DRYPermissions,)
     queryset = City.objects.all()
     serializer_class = CitySerializer
     filter_backends = [SearchFilter]

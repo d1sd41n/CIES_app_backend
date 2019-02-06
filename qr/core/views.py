@@ -54,7 +54,6 @@ class CompanyViewSet(viewsets.ModelViewSet):
     Si se consulta una compañía en específico:
     desde aquí se edita la información y se elimina la compañía
     específica"""
-    permission_classes = (DRYPermissions,)
     queryset = Company.objects.all().order_by(Lower('name'))
     serializer_class = CompanySerializer
     filter_backends = [SearchFilter, OrderingFilter]
@@ -141,7 +140,6 @@ class SeatViewSet(viewsets.ModelViewSet):
 
     queryset = Seat.objects.all().order_by(Lower('name'))
     serializer_class = SeatSerializer
-    permission_classes = (DRYPermissions,)
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ['name']
 
@@ -288,7 +286,6 @@ class SeatUserViewSet(viewsets.ModelViewSet):
     DNI, nombre de usario, correo, nombre o apellido.
     """
     queryset = User.objects.all().order_by(Lower('username'))
-    permission_classes = (DRYPermissions,)
     serializer_class = CustomUserSerializer
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ['username', 'email', 'dni']
@@ -328,9 +325,6 @@ class SeatUserViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def create(self, request, company_pk, seat_pk):
-        print("#####################################")
-        print(request.data)
-        print("#####################################")
         data = request.data.copy()
         data["is_superuser"] = False
         data["is_staff"] = False
@@ -473,7 +467,6 @@ class CompanyVisitor(viewsets.ModelViewSet):
     La compañía se añade automaticamente en la view
     """
 
-    permission_classes = (DRYPermissions,)
     queryset = Visitor.objects.all().order_by(Lower('last_name'))
     serializer_class = VisitorSerializer
     filter_backends = [SearchFilter]
