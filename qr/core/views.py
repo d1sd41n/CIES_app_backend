@@ -17,9 +17,10 @@ from core.serializers import (AddressSerializer, CompanySerializer,
                               SeatSerializerList, UserSerializer,
                               UserSerializerEdit, UserSerializerListCustom,
                               VisitorSerializer)
-from dry_rest_permissions.generics import DRYPermissions
 from ubication.models import Location
 from ubication.serializers import LocationSerializer
+from qr.permissions import (DeveloperOnly, ManagerAndSuperiorsOnly,
+                            SupervisorAndSuperiorsOnly, GuardAndSuperiorsOnly)
 
 
 class auxViewSet(viewsets.ViewSet):
@@ -55,6 +56,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
     desde aquí se edita la información y se elimina la compañía
     específica"""
     queryset = Company.objects.all().order_by(Lower('name'))
+    permission_classes = [DeveloperOnly]
     serializer_class = CompanySerializer
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ['nit', 'name']
@@ -139,6 +141,7 @@ class SeatViewSet(viewsets.ModelViewSet):
     """
 
     queryset = Seat.objects.all().order_by(Lower('name'))
+    permission_classes = [DeveloperOnly]
     serializer_class = SeatSerializer
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ['name']
@@ -286,6 +289,7 @@ class SeatUserViewSet(viewsets.ModelViewSet):
     DNI, nombre de usario, correo, nombre o apellido.
     """
     queryset = User.objects.all().order_by(Lower('username'))
+    permission_classes = [GuardAndSuperiorsOnly]
     serializer_class = CustomUserSerializer
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ['username', 'email', 'dni']
