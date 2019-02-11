@@ -289,7 +289,7 @@ class SeatUserViewSet(viewsets.ModelViewSet):
     DNI, nombre de usario, correo, nombre o apellido.
     """
     queryset = User.objects.all().order_by(Lower('username'))
-    permission_classes = [GuardAndSuperiorsOnly]
+    permission_classes = [SupervisorAndSuperiorsOnly]
     serializer_class = CustomUserSerializer
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ['username', 'email', 'dni']
@@ -472,6 +472,7 @@ class CompanyVisitor(viewsets.ModelViewSet):
     """
 
     queryset = Visitor.objects.all().order_by(Lower('last_name'))
+    permission_classes = [GuardAndSuperiorsOnly]
     serializer_class = VisitorSerializer
     filter_backends = [SearchFilter]
     search_fields = ['dni']

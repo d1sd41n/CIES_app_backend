@@ -17,6 +17,8 @@ from items.serializers import (BrandSerializer, CheckInCreateSerializer,
                                ChekinSerializer, ItemSerializer,
                                ItemUpdateSerializer, LostItemSerializer,
                                RegisterItem, TypeItemSerializer)
+from qr.permissions import (DeveloperOnly, ManagerAndSuperiorsOnly,
+                            SupervisorAndSuperiorsOnly, GuardAndSuperiorsOnly)
 
 
 class CheckInViewSet(viewsets.ModelViewSet):
@@ -37,6 +39,7 @@ class CheckInViewSet(viewsets.ModelViewSet):
 
         http://localhost:8000/items/companies/pk/seats/1pk/check/?search_item=ID_DEL_ITEM"""
     queryset = CheckIn.objects.all()
+    permission_classes = [GuardAndSuperiorsOnly]
     serializer_class = CheckInCreateSerializer
     filter_backends = [SearchFilter]
     search_fields = ['item', 'worker']
@@ -133,6 +136,7 @@ class RegisterItemViewSet(generics.CreateAPIView):
     }
     """
     serializer_class = RegisterItem
+    permission_classes = [GuardAndSuperiorsOnly]
 
     def post(self, request, company_pk, seat_pk):
         data = request.data.copy()
@@ -203,6 +207,7 @@ class ItemViewSet(viewsets.ModelViewSet):
     serializer_class = ItemUpdateSerializer
     filter_backends = [SearchFilter]
     search_fields = ['owner dni']
+    permission_classes = [GuardAndSuperiorsOnly]
 
     def queryAnnotate(self, items):
         items = items \
@@ -319,6 +324,7 @@ class CompanyTypeItem(viewsets.ModelViewSet):
     se filtra con: kind
     """
     queryset = TypeItem.objects.all().order_by(Lower('kind'))
+    permission_classes = [SupervisorAndSuperiorsOnly]
     serializer_class = TypeItemSerializer
     filter_backends = [SearchFilter]
     search_fields = ['kind']
@@ -400,6 +406,7 @@ class BrandItem(viewsets.ModelViewSet):
     queryset = Brand.objects.all().order_by(Lower('brand'))
     serializer_class = BrandSerializer
     filter_backends = [SearchFilter]
+    permission_classes = [SupervisorAndSuperiorsOnly]
     search_fields = ['brand']
 
     def queryAnnotate(self, brands):
@@ -485,6 +492,7 @@ class LostItemView(APIView):
     serializer_class = LostItemSerializer
     filter_backends = [SearchFilter]
     search_fields = ['owner_dni']
+    permission_classes = [GuardAndSuperiorsOnly]
 
     def get_serializer_class(self):
         return self.serializer_class
