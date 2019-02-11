@@ -9,7 +9,7 @@ import datetime
 from django.db.models import Q
 from core.models import CustomUser, Seat
 from rest_framework import status
-
+from qr.permissions import GuardAndSuperiorsOnly
 
 class EmailLostItem(APIView):
     """
@@ -20,34 +20,9 @@ class EmailLostItem(APIView):
     }
     </pre>
     """
-
-    def permissions(self, request):
-        """
-        Ya que es sólo una vista la que necesita estos
-        permisos se harán de esta manera y no usando los de DRF."""
-
-        developer_permission = request.user.groups.filter(
-            Q(name="Developer"))
-
-        if developer_permission:
-            return 1
-        group = request.user.groups.filter(Q(name="manager") |
-                                           Q(name="Security Boss"))
-        print(len(group)==1)
-        parameters = [parameter for parameter in request.path_info
-                      if parameter.isdigit()]
-        user_company = str(CustomUser.objects.get(
-            user=request.user).seat.company.id)
-        user_seat = str(CustomUser.objects.get(user=request.user).seat.id)
-        if (len(group)==1 and user_company == parameters[0]
-                and user_seat == parameters[1]):
-                return 1
-        return Response(status=status.HTTP_403_FORBIDDEN)
+    permission_classes = [GuardAndSuperiorsOnly]
 
     def post(self, request, company_pk, seat_pk, format=None):
-        permission = self.permissions(request)
-        if permission != 1:
-            return permission
         dias = ["Lunes", "Martes", "Miercoles", "Jueves",
                 "Viernes", "Sabado", "Domingo"]
         id_item = request.data["id"]

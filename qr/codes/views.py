@@ -18,6 +18,7 @@ from codes.serializers import CodesSerializer, GenerateCodesSerializer
 from core.models import CustomUser, Seat
 from dry_rest_permissions.generics import DRYPermissions
 from items.models import Item
+from qr.permissions import SupervisorAndSuperiorsOnly
 
 
 class CompanyCodes(viewsets.ReadOnlyModelViewSet):
@@ -29,7 +30,6 @@ class CompanyCodes(viewsets.ReadOnlyModelViewSet):
     desde los codes de la sede.
 
     Se filtra por id de la sede"""
-    permission_classes = (DRYPermissions,)
     queryset = Code.objects.all()
     serializer_class = CodesSerializer
 
@@ -62,6 +62,7 @@ class GenerateCodes(APIView):
     "pages": 1
     }"""
     serializer_class = GenerateCodesSerializer
+    permission_classes = [SupervisorAndSuperiorsOnly]
 
     def permissions(self, request, response, buffer, p, code_list):
         """
@@ -117,7 +118,7 @@ class GenerateCodes(APIView):
                 return Response("No se crearon páginas nuevas", status=status.HTTP_400_BAD_REQUEST)
             seat = Seat.objects.get(pk=seat_pk)
             response = HttpResponse(content_type='application/pdf')
-            response['Content-Disposition'] = 'attachment; filename="codes page.pdf"'
+            response['Content-Disposition'] = 'attachment; filename="codigos.pdf"'
             buffer = BytesIO()
             p = canvas.Canvas(buffer, pagesize=A4)
             code_list = []
@@ -135,5 +136,10 @@ class GenerateCodes(APIView):
                                           width=50,
                                           height=50)
                 p.showPage()
-            return self.permissions(request, response, buffer, p, code_list)
-        return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
+            #return self.permissions(request, response, buffer, p, code_list)
+            Code.objects.bulk_create(code_list)
+            p.save()
+            pdf = buffer.getvalue()
+            buffer.close()
+            response.write(pdf)
+            return response

@@ -6,6 +6,7 @@ from rest_framework.filters import SearchFilter
 from dry_rest_permissions.generics import DRYPermissions
 from rest_framework.response import Response
 from ubication.models import Country, Province, City
+from qr.permissions import DeveloperOnly
 
 from ubication.serializers import (
     CountrySerializer,
@@ -34,8 +35,8 @@ class CountryViewSet(viewsets.ModelViewSet):
     retrieve:
     Retorna un país con id específico
     """
-    permission_classes = (DRYPermissions,)
     queryset = Country.objects.all().order_by(Lower('name'))
+    permission_classes = [DeveloperOnly]
     serializer_class = CountrySerializer
     filter_backends = [SearchFilter]
     search_fields = ['name', 'postalcode']
@@ -57,8 +58,8 @@ class ProvinceViewSet(viewsets.ModelViewSet):
     retrieve:
     Retorna una región con id específico
     """
-    permission_classes = (DRYPermissions,)
     queryset = Province.objects.all()
+    permission_classes = [DeveloperOnly]
     serializer_class = ProvinceSerializer
     filter_backends = [SearchFilter]
     search_fields = ['name']
@@ -88,8 +89,8 @@ class CityViewSet(viewsets.ModelViewSet):
     retrieve:
     Retorna una ciudad con id específico
     """
-    permission_classes = (DRYPermissions,)
     queryset = City.objects.all()
+    permission_classes = [DeveloperOnly]
     serializer_class = CitySerializer
     filter_backends = [SearchFilter]
     search_fields = ['name']

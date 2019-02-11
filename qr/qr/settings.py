@@ -46,7 +46,6 @@ INSTALLED_APPS = [
     'emailing',
     # third party
     'rest_framework',
-    'dry_rest_permissions',
     'corsheaders',
     'rest_framework.authtoken',
 ]
@@ -167,7 +166,7 @@ REST_FRAMEWORK = {
 #######   Email  ###############
 ################################
 EMAIL_HOST = 'smtp.sendgrid.net'
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+EMAIL_HOST_USER = os.environ.get('EMAIL_USER')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_PASSWORD')
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
