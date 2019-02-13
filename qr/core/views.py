@@ -313,7 +313,8 @@ class SeatUserViewSet(viewsets.ModelViewSet):
     def list(self, request, company_pk, seat_pk):
         queryset_list = CustomUser.objects.filter(
             seat=seat_pk,
-            seat__company=company_pk
+            seat__company=company_pk,
+            user__is_active=True
         ).order_by(Lower('user__username'))
         query = self.request.GET.get("search")
         if query:

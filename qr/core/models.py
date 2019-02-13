@@ -48,7 +48,6 @@ class CustomUser(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     seat = models.ForeignKey(Seat, on_delete=models.CASCADE)
     dni = models.CharField(max_length=30, unique=True)
-    enabled = models.BooleanField(default=True)
     objects = CustomUserManager()
 
     def __str__(self):

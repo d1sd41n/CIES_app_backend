@@ -15,5 +15,7 @@ disabled_models_router = routers.NestedSimpleRouter(router,
 disabled_models_router.register(r'disabled-models', views.DisableModelsViewSet, base_name='disabled-models')
 
 urlpatterns = [
-    url(r'^', include(disabled_models_router.urls)),
+    #url(r'^', include(disabled_models_router.urls)),
+    url(r'^companies/(?P<company_pk>\d+)/seats/(?P<seat_pk>\d+)/disabled-models/$',
+        views.DisableModelsViewSet.as_view(), name='lost_item')
 ]
