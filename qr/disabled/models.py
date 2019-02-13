@@ -27,39 +27,5 @@ class Disabled(models.Model):
     model = models.CharField(max_length=13, choices=MODEL_CHOICE)
     objects = DisabledManager()
 
-    @staticmethod
-    def has_read_permission(request):
-        developer_permission = request.user.groups.filter(Q(name="Developer"))
-        if developer_permission:
-            return True
-        group = request.user.groups.filter(Q(name="Manager"))
-        parameters = [parameter for parameter in request.path_info
-                      if parameter.isdigit()]
-        user_company = str(CustomUser.objects.get(
-            user=request.user).seat.company.id)
-        if group and user_company == parameters[0]:
-            return True
-        return False
-
-    def has_object_read_permission(self, request):
-        return True
-
-    def has_object_write_permission(self, request):
-        return True
-
-    @staticmethod
-    def has_write_permission(request):
-        developer_permission = request.user.groups.filter(Q(name="Developer"))
-        if developer_permission:
-            return True
-        group = request.user.groups.filter(Q(name="Manager"))
-        parameters = [parameter for parameter in request.path_info
-                      if parameter.isdigit()]
-        user_company = str(CustomUser.objects.get(
-            user=request.user).seat.company.id)
-        if group and user_company == parameters[0]:
-            return True
-        return False
-
     def __str__(self):
         return '{0} : {1}'.format(self.model, self.cause)
