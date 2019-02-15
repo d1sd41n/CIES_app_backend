@@ -43,14 +43,13 @@ class DisableModelsViewSet(APIView):
 
             if model == "item":
                 if object.type_item.company.id != int(company_pk):
-                    return Response(status=status.HTTP_403_FORBIDDEN)
+                    return Response({"Response": "Usted no tiene permiso para realizar esta accion"},status=status.HTTP_403_FORBIDDEN)
             elif model == "user":
-                print(object.is_active)
                 custom_user = CustomUser.objects.get(user=object_id)
                 sea_user_id = custom_user.seat.id
                 company_user_id = custom_user.seat.company.id
                 if company_user_id != int(company_pk) or sea_user_id != int(seat_pk) or "Manager" in object.groups.values_list('name',flat=True):
-                    return Response(status=status.HTTP_403_FORBIDDEN)
+                    return Response({"Response": "Usted no tiene permiso para realizar esta accion"},status=status.HTTP_403_FORBIDDEN)
                 object.is_active = False
                 object.save()
                 return Response({"Response": "Objeto eliminado"}, status=status.HTTP_200_OK)

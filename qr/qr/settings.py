@@ -158,8 +158,19 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ),
     'DEFAULT_AUTHENTICATION_CLASSES': (
+        #'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.TokenAuthentication',
+        # 'core.authentication.ExpiringTokenAuthentication',
     ),
+    'DEFAULT_THROTTLE_CLASSES': (
+    'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ),
+    'DEFAULT_THROTTLE_RATES': {
+        'loginAttempts': '200/hr',
+        'user': '2000/hour',
+        'anon': '1000/hour',
+    }
 }
 
 ################################
