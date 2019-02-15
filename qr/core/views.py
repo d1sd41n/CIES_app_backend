@@ -22,6 +22,9 @@ from ubication.serializers import LocationSerializer
 from qr.permissions import (DeveloperOnly, ManagerAndSuperiorsOnly,
                             SupervisorAndSuperiorsOnly, GuardAndSuperiorsOnly)
 
+import datetime
+from core.authentication import UserLoginRateThrottle
+
 
 class auxViewSet(viewsets.ViewSet):
     """Esta view es para los EndPoints vacíos
@@ -537,14 +540,19 @@ class CompanyVisitor(viewsets.ModelViewSet):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
-class LoginToken(ObtainAuthToken):
+class ObtainExpiringAuthToken(ObtainAuthToken):
+    throttle_classes = (UserLoginRateThrottle,)
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data,
                                            context={'request': request})
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
-        token = Token.objects.get(user=user)
+        token, created =  Token.objects.get_or_create(user=user)
+        if not created:
+                # update the created time of the token to keep it valid
+                token.created = datetime.datetime.utcnow()
+                token.save()
         custom = CustomUser.objects.get(user=user.pk)
         return Response({
             'token': token.key,
