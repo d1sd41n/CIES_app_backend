@@ -11,7 +11,6 @@ from rest_framework.views import APIView
 
 from codes.models import Code
 from core.models import Company, CustomUser, Seat
-from dry_rest_permissions.generics import DRYPermissions
 from items.models import Brand, CheckIn, Item, LostItem, TypeItem
 from items.serializers import (BrandSerializer, CheckInCreateSerializer,
                                ChekinSerializer, ItemSerializer,

@@ -16,7 +16,6 @@ from rest_framework.views import APIView
 from codes.models import Code
 from codes.serializers import CodesSerializer, GenerateCodesSerializer
 from core.models import CustomUser, Seat
-from dry_rest_permissions.generics import DRYPermissions
 from items.models import Item
 from qr.permissions import SupervisorAndSuperiorsOnly
 

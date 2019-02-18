@@ -3,7 +3,6 @@ from django.db.models.functions import Lower
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, status
 from rest_framework.filters import SearchFilter
-from dry_rest_permissions.generics import DRYPermissions
 from rest_framework.response import Response
 from ubication.models import Country, Province, City
 from qr.permissions import DeveloperOnly
