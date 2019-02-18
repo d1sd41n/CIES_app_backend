@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 import os
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -172,6 +174,15 @@ REST_FRAMEWORK = {
         'anon': '1000/hour',
     }
 }
+
+########################
+#### Sentry ###########
+#######################
+
+sentry_sdk.init(
+    dsn="https://684b2eb01f8d4d5892b653ff01a8deb3@sentry.io/1396088",
+    integrations=[DjangoIntegration()]
+)
 
 ################################
 #######   Email  ###############
