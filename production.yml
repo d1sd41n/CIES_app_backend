@@ -23,7 +23,7 @@ services:
     volumes:
       - dev_postgres_volume:/var/lib/postgresql/data
     env_file:
-      - ./.envs/.dev/.postgres
+      - ./.envs/.production/.postgres
 
   web:
     restart: always
