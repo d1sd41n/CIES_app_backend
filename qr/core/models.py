@@ -27,6 +27,13 @@ class Company(models.Model):
     enabled = models.BooleanField(default=True)
     objects = CompanyManager()
 
+    class Meta:
+        verbose_name_plural = "Companies"
+
+    def __str__(self):
+        return self.name
+
+
 
 class Seat(models.Model):
     """Almacena diferentes sedes de una compañia
@@ -39,6 +46,10 @@ class Seat(models.Model):
     enabled = models.BooleanField(default=True)
     phone = models.CharField(max_length=15, unique=True, blank=True)
     objects = SeatManager()
+
+    def __str__(self):
+        return self.name
+
 
 
 class CustomUser(models.Model):
