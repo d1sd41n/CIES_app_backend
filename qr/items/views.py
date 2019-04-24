@@ -57,10 +57,10 @@ class CheckInViewSet(viewsets.ModelViewSet):
             user = User.objects.get(id=request.user.id)
         except ObjectDoesNotExist:
             return Response({"Error": {"worker": "Este usuario no existe"}}, status=status.HTTP_400_BAD_REQUEST)
-        try:
-            CustomUser.objects.get(id=request.user.id, seat=seat_pk)
-        except ObjectDoesNotExist:
-            return Response({"Error": {"worker": "Este usuario no pertenece a la sede"}}, status=status.HTTP_400_BAD_REQUEST)
+        #try:
+        #    CustomUser.objects.get(id=request.user.id, seat=seat_pk)
+        #except ObjectDoesNotExist:
+        #    return Response({"Error": {"worker": "Este usuario no pertenece a la sede"}}, status=status.HTTP_400_BAD_REQUEST)
         serializer = CheckInCreateSerializer(data=data)
         if serializer.is_valid():
             serializer.validated_data['seat'] = seat
@@ -323,7 +323,7 @@ class CompanyTypeItem(viewsets.ModelViewSet):
     se filtra con: kind
     """
     queryset = TypeItem.objects.all().order_by(Lower('kind'))
-    permission_classes = [SupervisorAndSuperiorsOnly]
+    permission_classes = [GuardAndSuperiorsOnly]
     serializer_class = TypeItemSerializer
     filter_backends = [SearchFilter]
     search_fields = ['kind']
@@ -405,7 +405,7 @@ class BrandItem(viewsets.ModelViewSet):
     queryset = Brand.objects.all().order_by(Lower('brand'))
     serializer_class = BrandSerializer
     filter_backends = [SearchFilter]
-    permission_classes = [SupervisorAndSuperiorsOnly]
+    permission_classes = [GuardAndSuperiorsOnly]
     search_fields = ['brand']
 
     def queryAnnotate(self, brands):
