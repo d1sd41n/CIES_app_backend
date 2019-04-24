@@ -25,10 +25,10 @@ class SupervisorAndSuperiorsOnly(BasePermission):
             return False
         if "Manager" in request.user.groups.values_list('name',flat=True):
             return True
-        user_seat = str(CustomUser.objects.get(user=request.user).seat.id)
-        seat_pk = view.kwargs['seat_pk']
-        if user_seat != seat_pk:
-            return False
+        #user_seat = str(CustomUser.objects.get(user=request.user).seat.id)
+        #seat_pk = view.kwargs['seat_pk']
+        #if user_seat != seat_pk:
+        #    return False
         return "Superviser" in request.user.groups.values_list('name',flat=True)
 
 
