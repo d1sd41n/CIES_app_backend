@@ -86,7 +86,7 @@ class CheckInViewSet(viewsets.ModelViewSet):
 
     def list(self, request, company_pk, seat_pk):
         checks = CheckIn.objects.filter(seat__company__id=company_pk,
-                                        seat__id=seat_pk)
+                                        seat__id=seat_pk).order_by('-date')
         query = self.request.GET.get("search_item")
         if query:
             checks = checks.filter(

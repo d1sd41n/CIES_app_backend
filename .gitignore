@@ -96,3 +96,7 @@ qr/img.png
 .envs/*
 !.envs/.dev/
 env/
+
+
+### SSL
+sslfiles/
