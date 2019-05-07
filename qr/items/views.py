@@ -119,7 +119,7 @@ class RegisterItemViewSet(generics.CreateAPIView):
 
     Se insertan datos específicos del objeto, exceptuando
     el tipo de objeto y su marca.
-
+    http://localhost:8000/items/companies/pk/seats/pk/registeritem/
     Para registrar se debe enviar un JSON con el siguiente formato:
 
     {
@@ -145,12 +145,12 @@ class RegisterItemViewSet(generics.CreateAPIView):
             return Response({"Error": {"seat": "esa sede no existe"}}, status=status.HTTP_400_BAD_REQUEST)
         try:
             typeitem = TypeItem.objects.get(
-                id=data['type_item'], company__pk=company_pk)
+                id=data['type_item'])
         except ObjectDoesNotExist:
             return Response({"Error": {"TypeItem": "No existe ese tipo de objeto"}}, status=status.HTTP_400_BAD_REQUEST)
         try:
             brand = Brand.objects.get(
-                id=data['brand'], type_item__company=company_pk)
+                id=data['brand'])
         except ObjectDoesNotExist:
             return Response({"Error": {"brand": "No existe ese tipo de objeto de esta marca"}}, status=status.HTTP_400_BAD_REQUEST)
         try:
@@ -224,8 +224,9 @@ class ItemViewSet(viewsets.ModelViewSet):
         return items
 
     def list(self, request, company_pk):
-        items = Item.objects.filter(type_item__company__id=company_pk,
-                                    enabled=True)
+        items = Item.objects.filter(
+            enabled=True
+        )
         query = self.request.GET.get("search")
         if query:
             items = items.filter(
@@ -252,8 +253,7 @@ class ItemViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def retrieve(self, request, company_pk, pk):
-        items = Item.objects.filter(pk=pk, type_item__company__id=company_pk,
-                                    enabled=True)
+        items = Item.objects.filter(pk=pk, enabled=True)
         if not len(items):
             return Response({"Error": {"item": "Este item no existe"}}, status=status.HTTP_404_NOT_FOUND)
         item = self.queryAnnotate(items)
@@ -267,8 +267,7 @@ class ItemViewSet(viewsets.ModelViewSet):
         if len(request.data)==1 and 'lost' in request.data:
             item = get_object_or_404(
                     Item,
-                    id = pk,
-                    type_item__company = company_pk
+                    id = pk
                     )
             item.lost = request.data['lost']
             item.save()
@@ -280,17 +279,17 @@ class ItemViewSet(viewsets.ModelViewSet):
         if 'type_item' in request.data:
             try:
                 typeitem = TypeItem.objects.get(
-                    id=request.data['type_item'], company__pk=company_pk)
+                    id=request.data['type_item'])
             except ObjectDoesNotExist:
                 return Response({"Error": {"TypeItem": "No existe ese tipo de objeto"}}, status=status.HTTP_400_BAD_REQUEST)
         elif 'brand' in request.data:
             try:
                 brand = Brand.objects.get(
-                    id=request.data['brand'], type_item__company=company_pk)
+                    id=request.data['brand'])
             except ObjectDoesNotExist:
                 return Response({"Error": {"brand": "No existe ese tipo de objeto de esta marca"}}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            item = Item.objects.get(id=pk, type_item__company=company_pk)
+            item = Item.objects.get(id=pk)
         except ObjectDoesNotExist:
             return Response({"Error": {"item": "No existe ese item"}}, status=status.HTTP_400_BAD_REQUEST)
         serializer = ItemUpdateSerializer(item, data=request.data)
@@ -330,7 +329,6 @@ class CompanyTypeItem(viewsets.ModelViewSet):
 
     def list(self, request, company_pk):
         queryset_list = TypeItem.objects.filter(
-            company=company_pk,
             enabled=True
         ).order_by(
             Lower('kind')
@@ -347,13 +345,14 @@ class CompanyTypeItem(viewsets.ModelViewSet):
         r_queryset = get_object_or_404(
             TypeItem,
             id=pk,
-            company=company_pk,
             enabled=True
         )
         serializer = TypeItemSerializer(r_queryset)
         return Response(serializer.data)
 
     def create(self, request, company_pk):
+        """Este metodo se encuentra des-habilitado"""
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
         data = request.data
         serializer = TypeItemSerializer(data=data)
         try:
@@ -367,6 +366,8 @@ class CompanyTypeItem(viewsets.ModelViewSet):
         return Response({"Error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
     def update(self, request, pk, company_pk, **kwargs):
+        """Este metodo se encuentra des-habilitado"""
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
         data = request.data.copy()
         try:
             company = Company.objects.get(id=company_pk)
@@ -415,7 +416,6 @@ class BrandItem(viewsets.ModelViewSet):
 
     def list(self, request, company_pk, typeitem_pk):
         queryset_list = Brand.objects.filter(
-            type_item__company=company_pk,
             type_item=typeitem_pk,
             enabled=True
         ).order_by(Lower('brand'))
@@ -431,7 +431,6 @@ class BrandItem(viewsets.ModelViewSet):
         r_queryset = get_object_or_404(
             Brand,
             id=pk,
-            type_item__company=company_pk,
             type_item=typeitem_pk,
             enabled=True
         )
@@ -439,6 +438,8 @@ class BrandItem(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def create(self, request, company_pk, typeitem_pk):
+        """Este metodo se encuentra des-habilitado"""
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
         try:
             Company.objects.get(id=company_pk)
         except ObjectDoesNotExist:
@@ -459,6 +460,8 @@ class BrandItem(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def update(self, request, pk, company_pk, typeitem_pk, **kwargs):
+        """Este metodo se encuentra des-habilitado"""
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
         data = request.data.copy()
         try:
             company = Company.objects.get(id=company_pk)

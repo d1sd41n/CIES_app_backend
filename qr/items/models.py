@@ -12,8 +12,7 @@ from .managers import (BrandManager, CheckinManager, ItemManager,
 
 class TypeItem(models.Model):
     kind = models.CharField(max_length=30)
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True,
-                                null=True)
+    company = models.ForeignKey(Company, blank=True, null=True)
     enabled = models.BooleanField(default=True)
     objects = TypeItemManager()
 

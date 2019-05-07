@@ -76,10 +76,13 @@ class Visitor(models.Model):
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
     dni = models.CharField(max_length=50, unique=True)
-    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
     enabled = models.BooleanField(default=True)
     email = models.EmailField(null=True)
     phone = models.CharField(max_length=10, null=True, blank=True)
+    seat_registration = models.ForeignKey(Seat, blank=True, null=True)
+    registration_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    registered_by = models.ForeignKey(User, blank=True, null=True)
     objects = VisitorManager()
 
     def __str__(self):

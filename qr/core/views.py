@@ -483,7 +483,6 @@ class CompanyVisitor(viewsets.ModelViewSet):
 
     def list(self, request, company_pk):
         queryset_list = Visitor.objects.filter(
-            company=company_pk,
             enabled=True
         ).order_by(
             Lower('last_name')
@@ -500,7 +499,6 @@ class CompanyVisitor(viewsets.ModelViewSet):
         r_queryset = get_object_or_404(
             Visitor,
             id=pk,
-            company=company_pk,
             enabled=True
         )
         serializer = VisitorSerializer(r_queryset)
@@ -526,7 +524,7 @@ class CompanyVisitor(viewsets.ModelViewSet):
         except ObjectDoesNotExist:
             return Response({"Error": {"company": "la compañia no existe"}}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            visitor = Visitor.objects.get(id=pk, company__id=company_pk)
+            visitor = Visitor.objects.get(id=pk)
         except ObjectDoesNotExist:
             return Response({"Error": "el visitante no existe"}, status=status.HTTP_400_BAD_REQUEST)
         serializer = VisitorSerializer(visitor, data=data)

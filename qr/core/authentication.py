@@ -14,16 +14,9 @@ from django.contrib.auth.models import User
 class ExpiringTokenAuthentication(TokenAuthentication):
     """ Modulo en construccion """
     def authenticate_credentials(self, key):
-        print("#########################################")
-        print(key)
-        print("sdfdsfsgfhgthjhjfhjhfdhdhsgadgfsghhggjjh")
-        print("##########################################")
 
         model = self.get_model()
-
-        print(model)
-        #token = model.objects.get(key=key)
-        #print(token)
+        
         try:
             token = model.objects.select_related('user').get(key=key)
         except model.DoesNotExist:
@@ -34,18 +27,9 @@ class ExpiringTokenAuthentication(TokenAuthentication):
 
         # This is required for the time comparison
         utc_now = datetime.datetime.utcnow()
-        print("utcnow", utc_now)
         utc_now = utc_now.replace(tzinfo=pytz.utc)
 
-        print(33333333333333333333333333333333333)
-        print("timezone.now()", timezone.now())
-        print("utcnow 2", utc_now)
-        print("token created", token.created)
-        print(token.created < utc_now - datetime.timedelta(hours=1))
-        print(utc_now - datetime.timedelta(hours=1))
-
         if token.created < utc_now - datetime.timedelta(hours=24):
-            print("hooooosddfsdfgfgggggggggggggggggggggggggggg")
             raise exceptions.AuthenticationFailed(_('Token has expired'))
 
         return (token.user, token)
@@ -57,7 +41,6 @@ class UserLoginRateThrottle(SimpleRateThrottle):
     scope = 'loginAttempts'
 
     def get_cache_key(self, request, view):
-        print("get_cache_key")
         user = User.objects.filter(username=request.data.get('username'))
         ident = user[0].pk if user else self.get_ident(request)
 
@@ -72,12 +55,11 @@ class UserLoginRateThrottle(SimpleRateThrottle):
         On success calls `throttle_success`.
         On failure calls `throttle_failure`.
         """
-        
+
         if self.rate is None:
             return True
 
         self.key = self.get_cache_key(request, view)
-        print("self.key", self.key)
         if self.key is None:
             return True
 
@@ -93,7 +75,6 @@ class UserLoginRateThrottle(SimpleRateThrottle):
         return self.throttle_success(request)
 
     def throttle_success(self, request):
-        print("throttle_success")
         """
         Inserts the current request's timestamp along with the key
         into the cache.
