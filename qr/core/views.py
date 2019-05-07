@@ -506,6 +506,7 @@ class CompanyVisitor(viewsets.ModelViewSet):
 
     def create(self, request, company_pk, **kwargs):
         data = request.data.copy()
+        #print(data)
         try:
             company = Company.objects.get(id=company_pk)
         except ObjectDoesNotExist:
@@ -513,7 +514,8 @@ class CompanyVisitor(viewsets.ModelViewSet):
         serializer = VisitorSerializer(data=data)
         if serializer.is_valid():
             serializer.validated_data['company'] = company
-            serializer.save()
+            seat_registration = CustomUser.objects.get(user=request.user.pk).seat
+            serializer.save(registered_by=request.user, enabled=True, seat_registration=seat_registration)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response({"Error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
