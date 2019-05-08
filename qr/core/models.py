@@ -89,3 +89,8 @@ class Visitor(models.Model):
         return '{0}: {1} {2}'.format(self.first_name,
                                      self.last_name,
                                      self.dni)
+
+
+# This makes User's email unique in the DB
+from django.contrib.auth.models import User
+User._meta.get_field('email')._unique = True

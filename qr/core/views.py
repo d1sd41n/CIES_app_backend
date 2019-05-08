@@ -544,7 +544,15 @@ class ObtainExpiringAuthToken(ObtainAuthToken):
     throttle_classes = (UserLoginRateThrottle,)
 
     def post(self, request):
-        serializer = self.serializer_class(data=request.data,
+
+        # Email auth
+        data = request.data.copy()
+        username = data["username"]
+        username = User.objects.get(Q(username=username) | Q(email=username)).username
+        data["username"] = username
+
+
+        serializer = self.serializer_class(data=data,
                                            context={'request': request})
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
