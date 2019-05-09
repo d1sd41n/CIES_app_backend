@@ -548,7 +548,12 @@ class ObtainExpiringAuthToken(ObtainAuthToken):
         # Email auth
         data = request.data.copy()
         username = data["username"]
-        username = User.objects.get(Q(username=username) | Q(email=username)).username
+        try:
+            username = User.objects.get(Q(username=username) | Q(email=username)).username
+        except ObjectDoesNotExist:
+            return Response({"non_field_errors": [
+        "No puede iniciar sesión con las credenciales proporcionadas."
+    ]}, status=status.HTTP_400_BAD_REQUEST)
         data["username"] = username
 
 
