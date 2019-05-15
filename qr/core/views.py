@@ -482,14 +482,16 @@ class CompanyVisitor(viewsets.ModelViewSet):
     search_fields = ['dni']
 
     def list(self, request, company_pk):
+
         queryset_list = Visitor.objects.filter(
-            enabled=True
+            enabled=True,
+            company__pk=company_pk
         ).order_by(
             Lower('last_name')
         )
         query = self.request.GET.get("search")
         if query:
-            queryset_list = Visitor.objects.filter(
+            queryset_list = queryset_list.filter(
                 Q(dni__iexact=query)
             ).distinct()
         serializer = VisitorSerializer(queryset_list, many=True)
@@ -499,6 +501,7 @@ class CompanyVisitor(viewsets.ModelViewSet):
         r_queryset = get_object_or_404(
             Visitor,
             id=pk,
+            company__pk=company_pk,
             enabled=True
         )
         serializer = VisitorSerializer(r_queryset)
@@ -506,16 +509,17 @@ class CompanyVisitor(viewsets.ModelViewSet):
 
     def create(self, request, company_pk, **kwargs):
         data = request.data.copy()
-        #print(data)
         try:
             company = Company.objects.get(id=company_pk)
         except ObjectDoesNotExist:
             return Response({"Error": {"company": "la compañia no existe"}}, status=status.HTTP_400_BAD_REQUEST)
+        seat_registration = CustomUser.objects.get(user=request.user.pk).seat.pk
+        data['seat_registration'] = seat_registration
+        data['registered_by'] = request.user.pk
         serializer = VisitorSerializer(data=data)
         if serializer.is_valid():
-            serializer.validated_data['company'] = company
-            seat_registration = CustomUser.objects.get(user=request.user.pk).seat
-            serializer.save(registered_by=request.user, enabled=True, seat_registration=seat_registration)
+            visitor_obj = serializer.save()
+            visitor_obj.company.add(company)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response({"Error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 

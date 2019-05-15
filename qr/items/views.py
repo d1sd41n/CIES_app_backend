@@ -406,7 +406,7 @@ class BrandItem(viewsets.ModelViewSet):
     queryset = Brand.objects.all().order_by(Lower('brand'))
     serializer_class = BrandSerializer
     filter_backends = [SearchFilter]
-    permission_classes = [GuardAndSuperiorsOnly]
+    #permission_classes = [GuardAndSuperiorsOnly]
     search_fields = ['brand']
 
     def queryAnnotate(self, brands):

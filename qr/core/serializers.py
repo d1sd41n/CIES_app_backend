@@ -12,7 +12,8 @@ class VisitorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Visitor
         fields = ('__all__')
-        read_only_fields = ('enabled', 'company')
+        read_only_fields = ('enabled', )
+        extra_kwargs = {'company': {'write_only': True}}
 
 
 class CompanySerializer(serializers.ModelSerializer):
