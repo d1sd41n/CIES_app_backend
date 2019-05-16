@@ -13,7 +13,6 @@ class ItemSerializer(serializers.Serializer):
     type_item = serializers.CharField(max_length=30)
     brand = serializers.CharField(max_length=30)
     registered_in_seat_id = serializers.IntegerField()
-    company_id = serializers.IntegerField()
     registered_in_seat = serializers.CharField(max_length=100)
     registration_date = serializers.DateTimeField()
     registered_by = serializers.IntegerField()
@@ -86,7 +85,7 @@ class RegisterItem(serializers.ModelSerializer):
     class Meta:
         model = Item
         fields = ('__all__')
-        read_only_fields = ('registered_by', 'enabled',
+        read_only_fields = ('registered_by',
                             'lost', 'lost_date', 'seat_registration')
 
 

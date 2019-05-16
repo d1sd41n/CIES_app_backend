@@ -33,8 +33,8 @@ class Brand(models.Model):
 
 class Item(models.Model):
     type_item = models.ForeignKey(
-        TypeItem, on_delete=models.CASCADE)
-    code = models.OneToOneField(Code, on_delete=models.CASCADE)
+    TypeItem, on_delete=models.CASCADE)
+    code = models.OneToOneField(Code, unique=True, on_delete=models.CASCADE)
     owner = models.ForeignKey(Visitor, on_delete=models.CASCADE)
     brand = models.ForeignKey(Brand, on_delete=models.CASCADE,
                               null=True, blank=True)
@@ -44,6 +44,7 @@ class Item(models.Model):
     lost = models.BooleanField(default=False)
     lost_date = models.DateTimeField(null=True, blank=True)
     enabled = models.BooleanField(default=True)
+    company = models.ManyToManyField(Company, null=True, blank=True)
     seat_registration = models.ForeignKey(Seat, on_delete=models.CASCADE)
     registration_date = models.DateTimeField(auto_now_add=True, blank=True)
     registered_by = models.ForeignKey(User, on_delete=models.CASCADE,

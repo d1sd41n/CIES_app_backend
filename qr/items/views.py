@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from codes.models import Code
-from core.models import Company, CustomUser, Seat
+from core.models import Company, CustomUser, Seat, Visitor
 from items.models import Brand, CheckIn, Item, LostItem, TypeItem
 from items.serializers import (BrandSerializer, CheckInCreateSerializer,
                                ChekinSerializer, ItemSerializer,
@@ -53,14 +53,7 @@ class CheckInViewSet(viewsets.ModelViewSet):
             seat = Seat.objects.get(id=seat_pk, company__id=company_pk)
         except ObjectDoesNotExist:
             return Response({"Error": {"seat": "La sede no existe"}}, status=status.HTTP_400_BAD_REQUEST)
-        try:
-            user = User.objects.get(id=request.user.id)
-        except ObjectDoesNotExist:
-            return Response({"Error": {"worker": "Este usuario no existe"}}, status=status.HTTP_400_BAD_REQUEST)
-        #try:
-        #    CustomUser.objects.get(id=request.user.id, seat=seat_pk)
-        #except ObjectDoesNotExist:
-        #    return Response({"Error": {"worker": "Este usuario no pertenece a la sede"}}, status=status.HTTP_400_BAD_REQUEST)
+
         serializer = CheckInCreateSerializer(data=data)
         if serializer.is_valid():
             serializer.validated_data['seat'] = seat
@@ -160,15 +153,19 @@ class RegisterItemViewSet(generics.CreateAPIView):
         if code.used:
             return Response({"Error": {"code": "ese codigo ya esta en uso"}}, status=status.HTTP_400_BAD_REQUEST)
 
+
         data['lost'] = False
-        data['enabled'] = True
         data['registration_date'] = timezone.now()
         serializer = RegisterItem(data=data)
         if serializer.is_valid():
             serializer.validated_data['seat_registration'] = seat
-            serializer.save(registered_by=request.user, enabled=True)
+            item = serializer.save(registered_by=request.user, enabled=True)
             code.used = True
             code.save()
+            company = Company.objects.get(pk=company_pk)
+            visitor = Visitor.objects.get(pk=data['owner'])
+            visitor.company.add(company)
+            item.company.add(company)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response({"Error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -219,13 +216,13 @@ class ItemViewSet(viewsets.ModelViewSet):
                       brand=F('brand__brand'),
                       registered_in_seat=F('seat_registration__name'),
                       registered_in_seat_id=F('seat_registration'),
-                      company_id=F('seat_registration__company'),
                       code=F('code__code'))
         return items
 
     def list(self, request, company_pk):
         items = Item.objects.filter(
-            enabled=True
+            company__pk=company_pk,
+            owner__company__pk=company_pk,
         )
         query = self.request.GET.get("search")
         if query:
@@ -238,7 +235,7 @@ class ItemViewSet(viewsets.ModelViewSet):
             ).distinct()
             if (not len(items)):
                 return Response({"Error": {"item": "Item no encontrado"}}, status=status.HTTP_404_NOT_FOUND)
-        query = self.request.GET.get("search_code")
+        query = self.request.GET.get("search_code") # this filters by codes
         if query:
             items = items.filter(
                 Q(code__pk=query)
@@ -253,7 +250,7 @@ class ItemViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def retrieve(self, request, company_pk, pk):
-        items = Item.objects.filter(pk=pk, enabled=True)
+        items = Item.objects.filter(pk=pk, company__pk=company_pk, owner__company__pk=company_pk,)
         if not len(items):
             return Response({"Error": {"item": "Este item no existe"}}, status=status.HTTP_404_NOT_FOUND)
         item = self.queryAnnotate(items)
