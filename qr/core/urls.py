@@ -26,4 +26,6 @@ urlpatterns = [
     url(r'^', include(visitor_router.urls)),
     url(r'^login_token/$',
         views.ObtainExpiringAuthToken.as_view(), name='login_token'),
+    url(r'^companies/(?P<company_pk>\d+)/visitorexist/$',
+        views.VisitorExist.as_view(), name='visitor_exist')
 ]

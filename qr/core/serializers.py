@@ -116,3 +116,7 @@ class AddressSerializer(serializers.ModelSerializer):
         model = Location
         fields = '__all__'
         extra_kwargs = {'enabled': {'read_only': True}}
+
+
+class VisitorExistSerializer(serializers.Serializer):
+    exist = serializers.BooleanField()

@@ -10,13 +10,14 @@ from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from core.models import Company, CustomUser, Seat, Visitor
 from core.serializers import (AddressSerializer, CompanySerializer,
                               CustomUserSerializer, SeatSerializer,
                               SeatSerializerList, UserSerializer,
                               UserSerializerEdit, UserSerializerListCustom,
-                              VisitorSerializer)
+                              VisitorSerializer, VisitorExistSerializer)
 from ubication.models import Location
 from ubication.serializers import LocationSerializer
 from qr.permissions import (DeveloperOnly, ManagerAndSuperiorsOnly,
@@ -580,3 +581,30 @@ class ObtainExpiringAuthToken(ObtainAuthToken):
             'company': custom.seat.company_id,
             'seat': custom.seat_id,
         })
+
+
+class VisitorExist(APIView):
+    """
+    Esta view es solo para consultar la existencia de un visistante en la
+    base de datos.
+
+    devuelve True si existe si no False.
+
+    se debe enviar un json con el dni del visistante a consultar:
+
+    {
+    "first_name": "otro visistnte compañia 1",
+    "last_name": "ssffds",
+    "dni": "s44gdds",
+    "email": "esil@company.com",
+    "enabled": true
+    }
+    """
+    permission_classes = (GuardAndSuperiorsOnly,)
+
+    def post(self, request, company_pk):
+        try:
+            visitor = Visitor.objects.get(dni=request.data['dni'])
+        except ObjectDoesNotExist:
+            return Response({"exist": False,}, status=status.HTTP_200_OK)
+        return Response({"exist": True,}, status=status.HTTP_200_OK)
