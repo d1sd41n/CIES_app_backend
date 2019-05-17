@@ -44,7 +44,7 @@ class Item(models.Model):
     lost = models.BooleanField(default=False)
     lost_date = models.DateTimeField(null=True, blank=True)
     enabled = models.BooleanField(default=True)
-    company = models.ManyToManyField(Company, null=True, blank=True)
+    company = models.ManyToManyField(Company, blank=True)
     seat_registration = models.ForeignKey(Seat, on_delete=models.CASCADE)
     registration_date = models.DateTimeField(auto_now_add=True, blank=True)
     registered_by = models.ForeignKey(User, on_delete=models.CASCADE,

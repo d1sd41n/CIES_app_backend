@@ -44,21 +44,22 @@ class CheckInViewSet(viewsets.ModelViewSet):
     search_fields = ['item', 'worker']
 
     def create(self, request, company_pk, seat_pk):
-        data = request.data
+        data = request.data.copy()
         try:
-            Company.objects.get(id=company_pk)
+            company = Company.objects.get(id=company_pk)
         except ObjectDoesNotExist:
             return Response({"Error": {"company": "La compañía no existe"}}, status=status.HTTP_400_BAD_REQUEST)
         try:
             seat = Seat.objects.get(id=seat_pk, company__id=company_pk)
         except ObjectDoesNotExist:
             return Response({"Error": {"seat": "La sede no existe"}}, status=status.HTTP_400_BAD_REQUEST)
-
         serializer = CheckInCreateSerializer(data=data)
         if serializer.is_valid():
             serializer.validated_data['seat'] = seat
-            serializer.validated_data['worker'] = user
-            serializer.save()
+            serializer.validated_data['worker'] = request.user
+            check = serializer.save()
+            check.item.company.add(company)
+            check.item.owner.company.add(company)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response({"Error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -403,7 +404,7 @@ class BrandItem(viewsets.ModelViewSet):
     queryset = Brand.objects.all().order_by(Lower('brand'))
     serializer_class = BrandSerializer
     filter_backends = [SearchFilter]
-    #permission_classes = [GuardAndSuperiorsOnly]
+    permission_classes = [GuardAndSuperiorsOnly]
     search_fields = ['brand']
 
     def queryAnnotate(self, brands):

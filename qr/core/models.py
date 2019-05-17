@@ -76,7 +76,7 @@ class Visitor(models.Model):
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
     dni = models.CharField(max_length=50, unique=True)
-    company = models.ManyToManyField(Company, null=True)
+    company = models.ManyToManyField(Company, blank=True)
     enabled = models.BooleanField(default=True)
     email = models.EmailField(null=True, unique=True)
     phone = models.CharField(max_length=10, null=True, blank=True)
