@@ -148,7 +148,7 @@ class RegisterItemViewSet(generics.CreateAPIView):
         except ObjectDoesNotExist:
             return Response({"Error": {"brand": "No existe ese tipo de objeto de esta marca"}}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            code = Code.objects.get(code=data['code'], seat=seat_pk)
+            code = Code.objects.get(code=data['code'])
         except ObjectDoesNotExist:
             return Response({"Error": {"code": "Codigo invalido"}}, status=status.HTTP_400_BAD_REQUEST)
         if code.used:
@@ -273,6 +273,10 @@ class ItemViewSet(viewsets.ModelViewSet):
                             status=status.HTTP_201_CREATED)
         ################################################################
 
+        request.data.pop("id", None)
+        request.data.pop("registration_date", None)
+        request.data.pop("seat_registration", None)
+        request.data.pop("registered_by", None)
 
         if 'type_item' in request.data:
             try:
@@ -290,16 +294,31 @@ class ItemViewSet(viewsets.ModelViewSet):
             item = Item.objects.get(id=pk)
         except ObjectDoesNotExist:
             return Response({"Error": {"item": "No existe ese item"}}, status=status.HTTP_400_BAD_REQUEST)
+
         serializer = ItemUpdateSerializer(item, data=request.data)
         if serializer.is_valid():
             if serializer.validated_data['lost']:
                 serializer.validated_data['lost_date'] = timezone.now()
+            try:
+                code = Code.objects.get(code=request.data['code'])
+            except ObjectDoesNotExist:
+                return Response({"code": {"code": "Codigo invalido"}}, status=status.HTTP_400_BAD_REQUEST)
+            if code.used:
+                if item.code != code:
+                    return Response({"code": {"code": "ese codigo ya esta en uso"}}, status=status.HTTP_400_BAD_REQUEST)
             serializer.save()
+            code.used = True
+            code.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response({"Error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
     def partial_update(self, request, pk, company_pk, **kwargs):
 
+        request.data.pop("id", None)
+        request.data.pop("registration_date", None)
+        request.data.pop("seat_registration", None)
+        request.data.pop("registered_by", None)
+
         if 'type_item' in request.data:
             try:
                 typeitem = TypeItem.objects.get(
@@ -316,11 +335,24 @@ class ItemViewSet(viewsets.ModelViewSet):
             item = Item.objects.get(id=pk)
         except ObjectDoesNotExist:
             return Response({"Error": {"item": "No existe ese item"}}, status=status.HTTP_400_BAD_REQUEST)
+
         serializer = ItemUpdateSerializer(item, data=request.data, partial=True)
         if serializer.is_valid():
-            if serializer.validated_data['lost']:
-                serializer.validated_data['lost_date'] = timezone.now()
+            if 'lost' in request.data:
+                if serializer.validated_data['lost']:
+                    serializer.validated_data['lost_date'] = timezone.now()
+            if 'code' in request.data:
+                try:
+                    code = Code.objects.get(code=request.data['code'])
+                except ObjectDoesNotExist:
+                    return Response({"code": {"code": "Codigo invalido"}}, status=status.HTTP_400_BAD_REQUEST)
+                if code.used:
+                    if item.code != code:
+                        return Response({"code": {"code": "ese codigo ya esta en uso"}}, status=status.HTTP_400_BAD_REQUEST)
             serializer.save()
+            if 'code' in request.data:
+                code.used = True
+                code.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response({"Error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 

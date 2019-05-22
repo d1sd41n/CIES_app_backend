@@ -26,11 +26,13 @@ class ItemUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Item
         fields = ('reference',
+                  'code',
                   'color',
                   'lost',
                   'lost_date',
                   'type_item',
-                  'brand')
+                  'brand',
+                  'description',)
         read_only_fields = (
             'registered_by', 'seat_registration', 'registration_date', 'lost_date')
 
