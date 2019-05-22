@@ -477,7 +477,7 @@ class CompanyVisitor(viewsets.ModelViewSet):
     """
 
     queryset = Visitor.objects.all().order_by(Lower('last_name'))
-    permission_classes = [GuardAndSuperiorsOnly]
+    permission_classes = [GuardAndSuperiorsOnly,]
     serializer_class = VisitorSerializer
     filter_backends = [SearchFilter]
     search_fields = ['dni']
@@ -526,6 +526,10 @@ class CompanyVisitor(viewsets.ModelViewSet):
 
     def update(self, request, pk, company_pk, **kwargs):
         data = request.data.copy()
+        data.pop("id", None)
+        data.pop("registration_date", None)
+        data.pop("seat_registration", None)
+        data.pop("registered_by", None)
         try:
             company = Company.objects.get(id=company_pk)
         except ObjectDoesNotExist:
@@ -536,7 +540,26 @@ class CompanyVisitor(viewsets.ModelViewSet):
             return Response({"Error": "el visitante no existe"}, status=status.HTTP_400_BAD_REQUEST)
         serializer = VisitorSerializer(visitor, data=data)
         if serializer.is_valid():
-            serializer.validated_data['company'] = company
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def partial_update(self, request, pk, company_pk, **kwargs):
+        data = request.data.copy()
+        data.pop("id", None)
+        data.pop("registration_date", None)
+        data.pop("seat_registration", None)
+        data.pop("registered_by", None)
+        try:
+            company = Company.objects.get(id=company_pk)
+        except ObjectDoesNotExist:
+            return Response({"Error": {"company": "la compañia no existe"}}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            visitor = Visitor.objects.get(id=pk)
+        except ObjectDoesNotExist:
+            return Response({"Error": "el visitante no existe"}, status=status.HTTP_400_BAD_REQUEST)
+        serializer = VisitorSerializer(visitor, data=data, partial=True)
+        if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

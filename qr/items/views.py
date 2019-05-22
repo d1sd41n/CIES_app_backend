@@ -298,6 +298,32 @@ class ItemViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response({"Error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
+    def partial_update(self, request, pk, company_pk, **kwargs):
+
+        if 'type_item' in request.data:
+            try:
+                typeitem = TypeItem.objects.get(
+                    id=request.data['type_item'])
+            except ObjectDoesNotExist:
+                return Response({"Error": {"TypeItem": "No existe ese tipo de objeto"}}, status=status.HTTP_400_BAD_REQUEST)
+        elif 'brand' in request.data:
+            try:
+                brand = Brand.objects.get(
+                    id=request.data['brand'])
+            except ObjectDoesNotExist:
+                return Response({"Error": {"brand": "No existe ese tipo de objeto de esta marca"}}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            item = Item.objects.get(id=pk)
+        except ObjectDoesNotExist:
+            return Response({"Error": {"item": "No existe ese item"}}, status=status.HTTP_400_BAD_REQUEST)
+        serializer = ItemUpdateSerializer(item, data=request.data, partial=True)
+        if serializer.is_valid():
+            if serializer.validated_data['lost']:
+                serializer.validated_data['lost_date'] = timezone.now()
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response({"Error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
     def create(self, request, **kwargs):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 

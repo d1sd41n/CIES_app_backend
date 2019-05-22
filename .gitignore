@@ -100,3 +100,8 @@ env/
 
 ### SSL
 sslfiles/
+sslfiles/*
+.sslfiles
+.sslfiles/
+.sslfiles/*
+sslfiles
