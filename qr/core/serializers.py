@@ -66,7 +66,7 @@ class UserSerializerEdit(serializers.ModelSerializer):
         model = User
         fields = '__all__'
         read_only_fields = ('date_joined', 'last_login',
-                            'enabled', 'password', 'username')
+                            'enabled', 'password', 'type')
 
 
 class UserSerializerListCustom(serializers.Serializer):

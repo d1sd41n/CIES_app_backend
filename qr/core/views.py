@@ -369,12 +369,12 @@ class SeatUserViewSet(viewsets.ModelViewSet):
                 return Response({"Error": {"password": e}}, status=status.HTTP_400_BAD_REQUEST)
             user.password = make_password(data['password'])
             user.save()
-            data['user'] = user.id
             if serializer_custom.is_valid():
                 customUser = serializer_custom.save()
                 group.user_set.add(user)
                 data = request.data.copy()
                 data.pop("password")
+                data['id'] = user.id
                 return Response(data, status=status.HTTP_201_CREATED)
             else:
                 user.delete()
@@ -428,6 +428,7 @@ class SeatUserViewSet(viewsets.ModelViewSet):
         data["is_active"] = True
         data["seat"] = seat_pk
         data["user"] = user.id
+        data.pop("last_login", None)
 
         # verificasion si hay contraceñas(si se va a cambiar la pass)
         pval = True
@@ -440,6 +441,81 @@ class SeatUserViewSet(viewsets.ModelViewSet):
         serializer_custom = CustomUserSerializer(custom, data=data)
         if serializer_user.is_valid():  # and serializer_custom.is_valid():
             if serializer_custom.is_valid():
+                if pval:
+                    try:  # password validator
+                        validate_password(data['password'], user)
+                    except ValidationError as e:
+                        return Response({"Error": {"password": e}}, status=status.HTTP_400_BAD_REQUEST)
+                serializer_user.save()
+                serializer_custom.save()
+                if pval:
+                    user.password = make_password(data['password'])
+                    user.save()
+                user.groups.clear()
+                group.user_set.add(user)
+                data = request.data.copy()
+                if pval:
+                    data.pop("password")
+                return Response(data, status=status.HTTP_201_CREATED)
+            else:
+                return Response({"Error": serializer_custom.errors}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"Error": serializer_user.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+
+    def partial_update(self, request, pk, company_pk, seat_pk, **kwargs):
+        data = request.data.copy()
+        # validadores
+        try:
+            data['type']
+        except KeyError:
+            return Response({"Error": {'type': "el JSON no tiene el campo type"}}, status=status.HTTP_400_BAD_REQUEST)
+        if data["type"] == "Developer":
+            return Response({"Error": {"type": "ese tipo de usuario no permitido"}}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            group = Group.objects.get(name=data["type"])
+        except ObjectDoesNotExist:
+            return Response({"Error": {'type': "no existe ese tipo de usuario"}}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            Seat.objects.get(id=seat_pk, company__id=company_pk)
+        except ObjectDoesNotExist:
+            return Response({"Error": {"seat": "sede incorrecta"}}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            user = User.objects.get(id=pk)
+        except ObjectDoesNotExist:
+            return Response({"Error": {"pk": "ese usuario no existe"}}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            custom = CustomUser.objects.get(
+                user=user.id, seat=seat_pk, seat__company=company_pk)
+        except ObjectDoesNotExist:
+            return Response({"Error": {"user": "No se pudo encontrar el Customuser del user"}}, status=status.HTTP_400_BAD_REQUEST)
+        if not data["dni"].isnumeric():
+            return Response({"Error": {"dni": "La Cedula solo puede ser numerica"}}, status=status.HTTP_400_BAD_REQUEST)
+
+        data["is_superuser"] = False
+        data["is_staff"] = False
+        data["is_active"] = True
+        data["seat"] = seat_pk
+        data["user"] = user.id
+        data.pop("last_login", None)
+        data.pop("last_login", None)
+
+        # verificasion si hay contraceñas(si se va a cambiar la pass)
+        pval = True
+        try:
+            data['password']
+        except KeyError:
+            pval = False
+
+        serializer_user = UserSerializerEdit(user, data=data, partial=True)
+        serializer_custom = CustomUserSerializer(custom, data=data, partial=True)
+        if serializer_user.is_valid():  # and serializer_custom.is_valid():
+            if serializer_custom.is_valid():
+                if pval:
+                    try:  # password validator
+                        validate_password(data['password'], user)
+                    except ValidationError as e:
+                        return Response({"Error": {"password": e}}, status=status.HTTP_400_BAD_REQUEST)
                 serializer_user.save()
                 serializer_custom.save()
                 if pval:
