@@ -353,7 +353,7 @@ class SeatUserViewSet(viewsets.ModelViewSet):
             Seat.objects.get(id=seat_pk, company__id=company_pk)
         except ObjectDoesNotExist:
             return Response({"Error": {"seat": "sede incorrecta"}}, status=status.HTTP_400_BAD_REQUEST)
-        if data["type"] == "Developer":
+        if data["type"] == "Developer" or data["type"] == "Manager":
             return Response({"Error": {"type": "ese tipo de usuario no permitido"}}, status=status.HTTP_400_BAD_REQUEST)
         if not data["dni"].isnumeric():
             return Response({"Error": {"dni": "La Cedula solo puede ser numerica"}}, status=status.HTTP_400_BAD_REQUEST)
@@ -422,6 +422,9 @@ class SeatUserViewSet(viewsets.ModelViewSet):
             return Response({"Error": {"user": "No se pudo encontrar el Customuser del user"}}, status=status.HTTP_400_BAD_REQUEST)
         if not data["dni"].isnumeric():
             return Response({"Error": {"dni": "La Cedula solo puede ser numerica"}}, status=status.HTTP_400_BAD_REQUEST)
+        # if data["type"] == "Manager" and user.groups.all()[0].name != "Manager":
+        #     return Response({"Error": {"type": "No se agregar ese tipo de usuario a ese determinado usuario"}}, status=status.HTTP_400_BAD_REQUEST)
+
 
         data["is_superuser"] = False
         data["is_staff"] = False
@@ -436,6 +439,7 @@ class SeatUserViewSet(viewsets.ModelViewSet):
             data['password']
         except KeyError:
             pval = False
+
 
         serializer_user = UserSerializerEdit(user, data=data)
         serializer_custom = CustomUserSerializer(custom, data=data)
@@ -466,16 +470,14 @@ class SeatUserViewSet(viewsets.ModelViewSet):
     def partial_update(self, request, pk, company_pk, seat_pk, **kwargs):
         data = request.data.copy()
         # validadores
-        try:
-            data['type']
-        except KeyError:
-            return Response({"Error": {'type': "el JSON no tiene el campo type"}}, status=status.HTTP_400_BAD_REQUEST)
-        if data["type"] == "Developer":
-            return Response({"Error": {"type": "ese tipo de usuario no permitido"}}, status=status.HTTP_400_BAD_REQUEST)
-        try:
-            group = Group.objects.get(name=data["type"])
-        except ObjectDoesNotExist:
-            return Response({"Error": {'type': "no existe ese tipo de usuario"}}, status=status.HTTP_400_BAD_REQUEST)
+
+        if 'type' in data:
+            if data["type"] == "Developer":
+                return Response({"Error": {"type": "ese tipo de usuario no permitido"}}, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                group = Group.objects.get(name=data["type"])
+            except ObjectDoesNotExist:
+                return Response({"Error": {'type': "no existe ese tipo de usuario"}}, status=status.HTTP_400_BAD_REQUEST)
         try:
             Seat.objects.get(id=seat_pk, company__id=company_pk)
         except ObjectDoesNotExist:
@@ -489,15 +491,18 @@ class SeatUserViewSet(viewsets.ModelViewSet):
                 user=user.id, seat=seat_pk, seat__company=company_pk)
         except ObjectDoesNotExist:
             return Response({"Error": {"user": "No se pudo encontrar el Customuser del user"}}, status=status.HTTP_400_BAD_REQUEST)
-        if not data["dni"].isnumeric():
-            return Response({"Error": {"dni": "La Cedula solo puede ser numerica"}}, status=status.HTTP_400_BAD_REQUEST)
+        if 'dni' in data:
+            if not data["dni"].isnumeric():
+                return Response({"Error": {"dni": "La Cedula solo puede ser numerica"}}, status=status.HTTP_400_BAD_REQUEST)
+        # if data["type"] == "Manager" and user.groups.all()[0].name != "Manager":
+        #     return Response({"Error": {"type": "No se agregar ese tipo de usuario a ese determinado usuario"}}, status=status.HTTP_400_BAD_REQUEST)
+
 
         data["is_superuser"] = False
         data["is_staff"] = False
         data["is_active"] = True
         data["seat"] = seat_pk
         data["user"] = user.id
-        data.pop("last_login", None)
         data.pop("last_login", None)
 
         # verificasion si hay contraceñas(si se va a cambiar la pass)
@@ -521,8 +526,9 @@ class SeatUserViewSet(viewsets.ModelViewSet):
                 if pval:
                     user.password = make_password(data['password'])
                     user.save()
-                user.groups.clear()
-                group.user_set.add(user)
+                if 'type' in data:
+                    user.groups.clear()
+                    group.user_set.add(user)
                 data = request.data.copy()
                 if pval:
                     data.pop("password")
