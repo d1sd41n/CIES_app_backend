@@ -253,7 +253,7 @@ class ItemViewSet(viewsets.ModelViewSet):
     def retrieve(self, request, company_pk, pk):
         items = Item.objects.filter(pk=pk, company__pk=company_pk, owner__company__pk=company_pk,)
         if not len(items):
-            return Response({"Error": {"item": "Este item no existe"}}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"Error": {"item": "Este item no existe o no ha pasado por esta compañia"}}, status=status.HTTP_404_NOT_FOUND)
         item = self.queryAnnotate(items)
         serializer = ItemSerializer(item, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -291,9 +291,9 @@ class ItemViewSet(viewsets.ModelViewSet):
             except ObjectDoesNotExist:
                 return Response({"Error": {"brand": "No existe ese tipo de objeto de esta marca"}}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            item = Item.objects.get(id=pk)
+            item = Item.objects.get(id=pk, company__pk=company_pk, owner__company__pk=company_pk,)
         except ObjectDoesNotExist:
-            return Response({"Error": {"item": "No existe ese item"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Error": {"item": "Este item no existe o no ha pasado por esta compañia"}}, status=status.HTTP_400_BAD_REQUEST)
 
         serializer = ItemUpdateSerializer(item, data=request.data)
         if serializer.is_valid():
@@ -332,9 +332,10 @@ class ItemViewSet(viewsets.ModelViewSet):
             except ObjectDoesNotExist:
                 return Response({"Error": {"brand": "No existe ese tipo de objeto de esta marca"}}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            item = Item.objects.get(id=pk)
+            item = Item.objects.get(id=pk, company__pk=company_pk, owner__company__pk=company_pk,)
         except ObjectDoesNotExist:
-            return Response({"Error": {"item": "No existe ese item"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Error": {"item": "Este item no existe o no ha pasado por esta compañia"}}, status=status.HTTP_400_BAD_REQUEST)
+
 
         serializer = ItemUpdateSerializer(item, data=request.data, partial=True)
         if serializer.is_valid():
@@ -360,7 +361,12 @@ class ItemViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def destroy(self, request, company_pk, pk,):
-        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        try:
+            item = Item.objects.get(id=pk, company__pk=company_pk, owner__company__pk=company_pk,)
+        except ObjectDoesNotExist:
+            return Response({"Error": {"item": "Este item no existe o no ha pasado por esta compañia"}}, status=status.HTTP_400_BAD_REQUEST)
+        item.delete()
+        return Response({"Hecho!": "Item eliminado correctamente"}, status=status.HTTP_204_NO_CONTENT)
 
 
 class CompanyTypeItem(viewsets.ModelViewSet):

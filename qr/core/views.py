@@ -617,9 +617,9 @@ class CompanyVisitor(viewsets.ModelViewSet):
         except ObjectDoesNotExist:
             return Response({"Error": {"company": "la compañia no existe"}}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            visitor = Visitor.objects.get(id=pk)
+            visitor = Visitor.objects.get(id=pk, company__pk=company_pk)
         except ObjectDoesNotExist:
-            return Response({"Error": "el visitante no existe"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Error": "el visitante no existe o no ha visitado su compañia"}, status=status.HTTP_400_BAD_REQUEST)
         serializer = VisitorSerializer(visitor, data=data)
         if serializer.is_valid():
             serializer.save()
@@ -637,9 +637,9 @@ class CompanyVisitor(viewsets.ModelViewSet):
         except ObjectDoesNotExist:
             return Response({"Error": {"company": "la compañia no existe"}}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            visitor = Visitor.objects.get(id=pk)
+            visitor = Visitor.objects.get(id=pk, company__pk=company_pk)
         except ObjectDoesNotExist:
-            return Response({"Error": "el visitante no existe"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Error": "el visitante no existe o no ha visitado su compañia"}, status=status.HTTP_400_BAD_REQUEST)
         serializer = VisitorSerializer(visitor, data=data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -647,7 +647,12 @@ class CompanyVisitor(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def destroy(self, request, pk, company_pk, **kwargs):
-        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        try:
+            visitor = Visitor.objects.get(id=pk, company__pk=company_pk)
+        except ObjectDoesNotExist:
+            return Response({"Error": "el visitante no existe o no ha visitado su compañia"}, status=status.HTTP_400_BAD_REQUEST)
+        visitor.delete()
+        return Response({"Hecho!": "Visistante eliminado correctamente"}, status=status.HTTP_204_NO_CONTENT)
 
 
 class ObtainExpiringAuthToken(ObtainAuthToken):
