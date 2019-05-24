@@ -383,6 +383,10 @@ class SeatUserViewSet(viewsets.ModelViewSet):
             return Response({"Error": serializer_user.errors}, status=status.HTTP_400_BAD_REQUEST)
 
     def retrieve(self, request, pk, company_pk, seat_pk):
+        try:
+            user = User.objects.get(id=pk, is_active=True)
+        except ObjectDoesNotExist:
+            return Response({"Error": {"pk": "ese usuario no existe"}}, status=status.HTTP_400_BAD_REQUEST)
         user = CustomUser.objects.filter(seat__company__id=company_pk,
                                          seat__id=seat_pk, user__id=pk)
         if (not len(user)):
@@ -392,7 +396,21 @@ class SeatUserViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def destroy(self, request, pk, company_pk, seat_pk):
-        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        try:
+            user = User.objects.get(id=pk, is_active=True)
+        except ObjectDoesNotExist:
+            return Response({"Error": {"pk": "ese usuario no existe"}}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            custom = CustomUser.objects.get(
+                user=user.id, seat__company=company_pk)
+        except ObjectDoesNotExist:
+            return Response({"Error": {"user": "Ese usuario no existe o no pertenece a esta compañia"}}, status=status.HTTP_400_BAD_REQUEST)
+        if user.groups.all()[0].name == "Manager" or user.groups.all()[0].name == "Developer":
+            return Response({"Error": {"type": "No puede eliminar ese tipo de usuario"}}, status=status.HTTP_400_BAD_REQUEST)
+        user.is_active = False
+        user.save()
+        return Response({"Hecho!": "usuario eliminado correctamente"}, status=status.HTTP_204_NO_CONTENT)
+
 
     def update(self, request, pk, company_pk, seat_pk, **kwargs):
         data = request.data.copy()
@@ -412,18 +430,18 @@ class SeatUserViewSet(viewsets.ModelViewSet):
         except ObjectDoesNotExist:
             return Response({"Error": {"seat": "sede incorrecta"}}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            user = User.objects.get(id=pk)
+            user = User.objects.get(id=pk, is_active=True)
         except ObjectDoesNotExist:
             return Response({"Error": {"pk": "ese usuario no existe"}}, status=status.HTTP_400_BAD_REQUEST)
         try:
             custom = CustomUser.objects.get(
-                user=user.id, seat=seat_pk, seat__company=company_pk)
+                user=user.id, seat__company=company_pk)
         except ObjectDoesNotExist:
-            return Response({"Error": {"user": "No se pudo encontrar el Customuser del user"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Error": {"user": "Ese usuario no existe o no pertenece a esta compañia"}}, status=status.HTTP_400_BAD_REQUEST)
         if not data["dni"].isnumeric():
             return Response({"Error": {"dni": "La Cedula solo puede ser numerica"}}, status=status.HTTP_400_BAD_REQUEST)
-        # if data["type"] == "Manager" and user.groups.all()[0].name != "Manager":
-        #     return Response({"Error": {"type": "No se agregar ese tipo de usuario a ese determinado usuario"}}, status=status.HTTP_400_BAD_REQUEST)
+        if data["type"] == "Manager" and user.groups.all()[0].name != "Manager":
+            return Response({"Error": {"type": "No se agregar ese tipo de usuario a ese determinado usuario"}}, status=status.HTTP_400_BAD_REQUEST)
 
 
         data["is_superuser"] = False
@@ -471,6 +489,11 @@ class SeatUserViewSet(viewsets.ModelViewSet):
         data = request.data.copy()
         # validadores
 
+        try:
+            user = User.objects.get(id=pk, is_active=True)
+        except ObjectDoesNotExist:
+            return Response({"Error": {"pk": "ese usuario no existe"}}, status=status.HTTP_400_BAD_REQUEST)
+
         if 'type' in data:
             if data["type"] == "Developer":
                 return Response({"Error": {"type": "ese tipo de usuario no permitido"}}, status=status.HTTP_400_BAD_REQUEST)
@@ -478,24 +501,20 @@ class SeatUserViewSet(viewsets.ModelViewSet):
                 group = Group.objects.get(name=data["type"])
             except ObjectDoesNotExist:
                 return Response({"Error": {'type': "no existe ese tipo de usuario"}}, status=status.HTTP_400_BAD_REQUEST)
+            if data["type"] == "Manager" and user.groups.all()[0].name != "Manager":
+                return Response({"Error": {"type": "No se agregar ese tipo de usuario a ese determinado usuario"}}, status=status.HTTP_400_BAD_REQUEST)
         try:
             Seat.objects.get(id=seat_pk, company__id=company_pk)
         except ObjectDoesNotExist:
             return Response({"Error": {"seat": "sede incorrecta"}}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            user = User.objects.get(id=pk)
-        except ObjectDoesNotExist:
-            return Response({"Error": {"pk": "ese usuario no existe"}}, status=status.HTTP_400_BAD_REQUEST)
-        try:
             custom = CustomUser.objects.get(
-                user=user.id, seat=seat_pk, seat__company=company_pk)
+                user=user.id, seat__company=company_pk)
         except ObjectDoesNotExist:
-            return Response({"Error": {"user": "No se pudo encontrar el Customuser del user"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Error": {"user": "Ese usuario no existe o no pertenece a esta compañia"}}, status=status.HTTP_400_BAD_REQUEST)
         if 'dni' in data:
             if not data["dni"].isnumeric():
                 return Response({"Error": {"dni": "La Cedula solo puede ser numerica"}}, status=status.HTTP_400_BAD_REQUEST)
-        # if data["type"] == "Manager" and user.groups.all()[0].name != "Manager":
-        #     return Response({"Error": {"type": "No se agregar ese tipo de usuario a ese determinado usuario"}}, status=status.HTTP_400_BAD_REQUEST)
 
 
         data["is_superuser"] = False
