@@ -25,6 +25,7 @@ from qr.permissions import (DeveloperOnly, ManagerAndSuperiorsOnly,
 
 import datetime
 from core.authentication import UserLoginRateThrottle
+from django.contrib.auth.models import update_last_login
 
 
 class auxViewSet(viewsets.ViewSet):
@@ -679,15 +680,15 @@ class ObtainExpiringAuthToken(ObtainAuthToken):
 
     def post(self, request):
 
-        # Email auth
+        # Email auth, see whether exist a user with that email
         data = request.data.copy()
         username = data["username"]
         try:
             username = User.objects.get(Q(username=username) | Q(email=username)).username
         except ObjectDoesNotExist:
             return Response({"non_field_errors": [
-        "No puede iniciar sesión con las credenciales proporcionadas."
-    ]}, status=status.HTTP_400_BAD_REQUEST)
+                             "No puede iniciar sesión con las credenciales proporcionadas."
+                            ]}, status=status.HTTP_400_BAD_REQUEST)
         data["username"] = username
 
 
@@ -701,6 +702,7 @@ class ObtainExpiringAuthToken(ObtainAuthToken):
                 token.created = datetime.datetime.utcnow()
                 token.save()
         custom = CustomUser.objects.get(user=user.pk)
+        update_last_login(None, user)
         return Response({
             'token': token.key,
             'user_id': user.pk,
