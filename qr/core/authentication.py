@@ -14,9 +14,8 @@ from django.contrib.auth.models import User
 class ExpiringTokenAuthentication(TokenAuthentication):
     """ Modulo en construccion """
     def authenticate_credentials(self, key):
-
         model = self.get_model()
-        
+
         try:
             token = model.objects.select_related('user').get(key=key)
         except model.DoesNotExist:
@@ -55,7 +54,6 @@ class UserLoginRateThrottle(SimpleRateThrottle):
         On success calls `throttle_success`.
         On failure calls `throttle_failure`.
         """
-
         if self.rate is None:
             return True
 

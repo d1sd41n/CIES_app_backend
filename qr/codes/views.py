@@ -62,6 +62,8 @@ class GenerateCodes(APIView):
     }"""
     serializer_class = GenerateCodesSerializer
     permission_classes = [SupervisorAndSuperiorsOnly]
+    # lo siguiente pone un limite a la generacion de codigos al dia
+    throttle_scope = 'generatecodes'
 
     def permissions(self, request, response, buffer, p, code_list):
         """

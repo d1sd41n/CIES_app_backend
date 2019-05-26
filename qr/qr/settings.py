@@ -163,13 +163,15 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.TokenAuthentication',
     ),
     'DEFAULT_THROTTLE_CLASSES': (
-    'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.AnonRateThrottle',
         'rest_framework.throttling.UserRateThrottle',
+        'rest_framework.throttling.ScopedRateThrottle',
     ),
     'DEFAULT_THROTTLE_RATES': {
         'loginAttempts': '200/hr',
         'user': '2000/hour',
-        'anon': '1000/hour',
+        'anon': '500/hour',
+        'generatecodes': '3/day',
     }
 }
 
