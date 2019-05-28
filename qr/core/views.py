@@ -345,19 +345,19 @@ class SeatUserViewSet(viewsets.ModelViewSet):
         try:
             data['type']
         except KeyError:
-            return Response({'type': "el JSON no tiene el campo type"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'type': ["el JSON no tiene el campo type"]}, status=status.HTTP_400_BAD_REQUEST)
         try:
             group = Group.objects.get(name=data["type"])
         except ObjectDoesNotExist:
-            return Response({'type': "no existe ese tipo de usuario"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'type': ["no existe ese tipo de usuario"]}, status=status.HTTP_400_BAD_REQUEST)
         try:
             Seat.objects.get(id=seat_pk, company__id=company_pk)
         except ObjectDoesNotExist:
-            return Response({"seat": "La sede a la cual esta tratando de acceder no existe"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"seat": ["La sede a la cual esta tratando de acceder no existe"]}, status=status.HTTP_400_BAD_REQUEST)
         if data["type"] == "Developer" or data["type"] == "Manager":
-            return Response({"type": "ese tipo de usuario no permitido"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"type": ["ese tipo de usuario no permitido"]}, status=status.HTTP_400_BAD_REQUEST)
         if not data["dni"].isnumeric():
-            return Response({"Error": {"dni": "La Cedula solo puede ser numerica"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"dni": ["el dni solo puede ser numerico"]}, status=status.HTTP_400_BAD_REQUEST)
 
         serializer_user = UserSerializer(data=data)
         serializer_custom = CustomUserSerializer(data=data)
@@ -367,9 +367,10 @@ class SeatUserViewSet(viewsets.ModelViewSet):
                 validate_password(data['password'], user)
             except ValidationError as e:
                 user.delete()
-                return Response({"Error": {"password": e}}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"password": e}, status=status.HTTP_400_BAD_REQUEST)
             user.password = make_password(data['password'])
             user.save()
+            data['user'] = user.id
             if serializer_custom.is_valid():
                 customUser = serializer_custom.save()
                 group.user_set.add(user)
@@ -379,15 +380,15 @@ class SeatUserViewSet(viewsets.ModelViewSet):
                 return Response(data, status=status.HTTP_201_CREATED)
             else:
                 user.delete()
-                return Response({"Error": serializer_custom.errors}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(serializer_custom.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response({"Error": serializer_user.errors}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer_user.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def retrieve(self, request, pk, company_pk, seat_pk):
         try:
             user = User.objects.get(id=pk, is_active=True)
         except ObjectDoesNotExist:
-            return Response({"Error": {"pk": "ese usuario no existe"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"pk": "ese usuario no existe"}, status=status.HTTP_400_BAD_REQUEST)
         user = CustomUser.objects.filter(seat__company__id=company_pk,
                                          seat__id=seat_pk, user__id=pk)
         if (not len(user)):
@@ -400,17 +401,17 @@ class SeatUserViewSet(viewsets.ModelViewSet):
         try:
             user = User.objects.get(id=pk, is_active=True)
         except ObjectDoesNotExist:
-            return Response({"Error": {"pk": "ese usuario no existe"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"pk": ["ese usuario no existe"]}, status=status.HTTP_400_BAD_REQUEST)
         try:
             custom = CustomUser.objects.get(
                 user=user.id, seat__company=company_pk)
         except ObjectDoesNotExist:
-            return Response({"Error": {"user": "Ese usuario no existe o no pertenece a esta compañia"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"user": ["Ese usuario no existe o no pertenece a esta compañia"]}, status=status.HTTP_400_BAD_REQUEST)
         if user.groups.all()[0].name == "Manager" or user.groups.all()[0].name == "Developer":
-            return Response({"Error": {"type": "No puede eliminar ese tipo de usuario"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"type": ["No puede eliminar ese tipo de usuario"]}, status=status.HTTP_400_BAD_REQUEST)
         user.is_active = False
         user.save()
-        return Response({"Hecho!": "usuario eliminado correctamente"}, status=status.HTTP_204_NO_CONTENT)
+        return Response({"user": "usuario eliminado correctamente"}, status=status.HTTP_204_NO_CONTENT)
 
 
     def update(self, request, pk, company_pk, seat_pk, **kwargs):
@@ -419,30 +420,30 @@ class SeatUserViewSet(viewsets.ModelViewSet):
         try:
             data['type']
         except KeyError:
-            return Response({"Error": {'type': "el JSON no tiene el campo type"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'type': ["el JSON no tiene el campo type"]}, status=status.HTTP_400_BAD_REQUEST)
         if data["type"] == "Developer":
-            return Response({"Error": {"type": "ese tipo de usuario no permitido"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"type": ["ese tipo de usuario no permitido"]}, status=status.HTTP_400_BAD_REQUEST)
         try:
             group = Group.objects.get(name=data["type"])
         except ObjectDoesNotExist:
-            return Response({"Error": {'type': "no existe ese tipo de usuario"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'type': ["no existe ese tipo de usuario"]}, status=status.HTTP_400_BAD_REQUEST)
         try:
             Seat.objects.get(id=seat_pk, company__id=company_pk)
         except ObjectDoesNotExist:
-            return Response({"Error": {"seat": "sede incorrecta"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"seat": ["sede incorrecta"]}, status=status.HTTP_400_BAD_REQUEST)
         try:
             user = User.objects.get(id=pk, is_active=True)
         except ObjectDoesNotExist:
-            return Response({"Error": {"pk": "ese usuario no existe"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"pk": ["ese usuario no existe"]}, status=status.HTTP_400_BAD_REQUEST)
         try:
             custom = CustomUser.objects.get(
                 user=user.id, seat__company=company_pk)
         except ObjectDoesNotExist:
-            return Response({"Error": {"user": "Ese usuario no existe o no pertenece a esta compañia"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"user": ["Ese usuario no existe o no pertenece a esta compañia"]}, status=status.HTTP_400_BAD_REQUEST)
         if not data["dni"].isnumeric():
-            return Response({"Error": {"dni": "La Cedula solo puede ser numerica"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"dni": ["el dni solo puede ser numerico"]}, status=status.HTTP_400_BAD_REQUEST)
         if data["type"] == "Manager" and user.groups.all()[0].name != "Manager":
-            return Response({"Error": {"type": "No se agregar ese tipo de usuario a ese determinado usuario"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"type": ["No se agregar ese tipo de usuario a ese determinado usuario"]}, status=status.HTTP_400_BAD_REQUEST)
 
 
         data["is_superuser"] = False
@@ -468,7 +469,7 @@ class SeatUserViewSet(viewsets.ModelViewSet):
                     try:  # password validator
                         validate_password(data['password'], user)
                     except ValidationError as e:
-                        return Response({"Error": {"password": e}}, status=status.HTTP_400_BAD_REQUEST)
+                        return Response({"password": e}, status=status.HTTP_400_BAD_REQUEST)
                 serializer_user.save()
                 serializer_custom.save()
                 if pval:
@@ -481,9 +482,9 @@ class SeatUserViewSet(viewsets.ModelViewSet):
                     data.pop("password")
                 return Response(data, status=status.HTTP_201_CREATED)
             else:
-                return Response({"Error": serializer_custom.errors}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(serializer_custom.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response({"Error": serializer_user.errors}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer_user.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
     def partial_update(self, request, pk, company_pk, seat_pk, **kwargs):
@@ -493,29 +494,29 @@ class SeatUserViewSet(viewsets.ModelViewSet):
         try:
             user = User.objects.get(id=pk, is_active=True)
         except ObjectDoesNotExist:
-            return Response({"Error": {"pk": "ese usuario no existe"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"pk": ["ese usuario no existe"]}, status=status.HTTP_400_BAD_REQUEST)
 
         if 'type' in data:
             if data["type"] == "Developer":
-                return Response({"Error": {"type": "ese tipo de usuario no permitido"}}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"type": ["ese tipo de usuario no permitido"]}, status=status.HTTP_400_BAD_REQUEST)
             try:
                 group = Group.objects.get(name=data["type"])
             except ObjectDoesNotExist:
-                return Response({"Error": {'type': "no existe ese tipo de usuario"}}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'type': ["no existe ese tipo de usuario"]}, status=status.HTTP_400_BAD_REQUEST)
             if data["type"] == "Manager" and user.groups.all()[0].name != "Manager":
-                return Response({"Error": {"type": "No se agregar ese tipo de usuario a ese determinado usuario"}}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"type": ["No se agregar ese tipo de usuario a ese determinado usuario"]}, status=status.HTTP_400_BAD_REQUEST)
         try:
             Seat.objects.get(id=seat_pk, company__id=company_pk)
         except ObjectDoesNotExist:
-            return Response({"Error": {"seat": "sede incorrecta"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"seat": ["sede incorrecta"]}, status=status.HTTP_400_BAD_REQUEST)
         try:
             custom = CustomUser.objects.get(
                 user=user.id, seat__company=company_pk)
         except ObjectDoesNotExist:
-            return Response({"Error": {"user": "Ese usuario no existe o no pertenece a esta compañia"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"user": ["Ese usuario no existe o no pertenece a esta compañia"]}, status=status.HTTP_400_BAD_REQUEST)
         if 'dni' in data:
             if not data["dni"].isnumeric():
-                return Response({"Error": {"dni": "La Cedula solo puede ser numerica"}}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"dni": ["el dni solo puede ser numerico"]}, status=status.HTTP_400_BAD_REQUEST)
 
 
         data["is_superuser"] = False
@@ -540,7 +541,7 @@ class SeatUserViewSet(viewsets.ModelViewSet):
                     try:  # password validator
                         validate_password(data['password'], user)
                     except ValidationError as e:
-                        return Response({"Error": {"password": e}}, status=status.HTTP_400_BAD_REQUEST)
+                        return Response({"password": e}, status=status.HTTP_400_BAD_REQUEST)
                 serializer_user.save()
                 serializer_custom.save()
                 if pval:
@@ -554,9 +555,9 @@ class SeatUserViewSet(viewsets.ModelViewSet):
                     data.pop("password")
                 return Response(data, status=status.HTTP_201_CREATED)
             else:
-                return Response({"Error": serializer_custom.errors}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(serializer_custom.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response({"Error": serializer_user.errors}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer_user.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class CompanyVisitor(viewsets.ModelViewSet):
@@ -615,10 +616,13 @@ class CompanyVisitor(viewsets.ModelViewSet):
         try:
             company = Company.objects.get(id=company_pk)
         except ObjectDoesNotExist:
-            return Response({"company": "la compañia a la que intenta acceder no existe"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"company": ["la compañia a la que intenta acceder no existe"]}, status=status.HTTP_400_BAD_REQUEST)
         seat_registration = CustomUser.objects.get(user=request.user.pk).seat.pk
         data['seat_registration'] = seat_registration
         data['registered_by'] = request.user.pk
+        if 'dni' in data:
+            if not data["dni"].isnumeric():
+                return Response({"dni": ["el dni solo puede ser numerico"]}, status=status.HTTP_400_BAD_REQUEST)
         serializer = VisitorSerializer(data=data)
         if serializer.is_valid():
             visitor_obj = serializer.save()
@@ -633,14 +637,17 @@ class CompanyVisitor(viewsets.ModelViewSet):
         data.pop("seat_registration", None)
         data.pop("registered_by", None)
 
+        if 'dni' in data:
+            if not data["dni"].isnumeric():
+                return Response({"dni": ["el dni solo puede ser numerico"]}, status=status.HTTP_400_BAD_REQUEST)
         try:
             company = Company.objects.get(id=company_pk)
         except ObjectDoesNotExist:
-            return Response({"company": "la compañia a la que intenta acceder no existe"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"company": ["la compañia a la que intenta acceder no existe"]}, status=status.HTTP_400_BAD_REQUEST)
         try:
             visitor = Visitor.objects.get(id=pk, company__pk=company_pk)
         except ObjectDoesNotExist:
-            return Response({"visitor": "el visitante no existe o no ha visitado su compañia"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"visitor": ["el visitante no existe o no ha visitado su compañia"]}, status=status.HTTP_400_BAD_REQUEST)
         serializer = VisitorSerializer(visitor, data=data)
         if serializer.is_valid():
             serializer.save()
@@ -653,14 +660,17 @@ class CompanyVisitor(viewsets.ModelViewSet):
         data.pop("registration_date", None)
         data.pop("seat_registration", None)
         data.pop("registered_by", None)
+        if 'dni' in data:
+            if not data["dni"].isnumeric():
+                return Response({"dni": ["el dni solo puede ser numerico"]}, status=status.HTTP_400_BAD_REQUEST)
         try:
             company = Company.objects.get(id=company_pk)
         except ObjectDoesNotExist:
-            return Response({"company": "la compañia a la que intenta acceder no existe"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"company": ["la compañia a la que intenta acceder no existe"]}, status=status.HTTP_400_BAD_REQUEST)
         try:
             visitor = Visitor.objects.get(id=pk, company__pk=company_pk)
         except ObjectDoesNotExist:
-            return Response({"visitor": "el visitante no existe o no ha visitado su compañia"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"visitor": ["el visitante no existe o no ha visitado su compañia"]}, status=status.HTTP_400_BAD_REQUEST)
         serializer = VisitorSerializer(visitor, data=data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -671,7 +681,7 @@ class CompanyVisitor(viewsets.ModelViewSet):
         try:
             visitor = Visitor.objects.get(id=pk, company__pk=company_pk)
         except ObjectDoesNotExist:
-            return Response({"visitor": "el visitante no existe o no ha visitado su compañia"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"visitor": ["el visitante no existe o no ha visitado su compañia"]}, status=status.HTTP_400_BAD_REQUEST)
         visitor.delete()
         return Response({"visistor": "Visistante eliminado correctamente"}, status=status.HTTP_204_NO_CONTENT)
 

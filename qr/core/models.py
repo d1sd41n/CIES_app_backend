@@ -61,6 +61,9 @@ class CustomUser(models.Model):
     dni = models.CharField(max_length=30, unique=True)
     objects = CustomUserManager()
 
+    class Meta:
+        verbose_name = "usuario"
+
     def __str__(self):
         return '{0} - {1}: {2} {3}'.format(self.user.username,
                                            self.user.first_name,

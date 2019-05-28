@@ -137,23 +137,23 @@ class RegisterItemViewSet(generics.CreateAPIView):
         try:
             seat = Seat.objects.get(id=seat_pk, company__id=company_pk)
         except ObjectDoesNotExist:
-            return Response({"seat": "la compañia a la que intenta acceder no existe"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"seat": ["la compañia a la que intenta acceder no existe"]}, status=status.HTTP_400_BAD_REQUEST)
         try:
             typeitem = TypeItem.objects.get(
                 id=data['type_item'])
         except ObjectDoesNotExist:
-            return Response({"type_item": "No existe ese tipo de objeto"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"type_item": ["No existe ese tipo de objeto"]}, status=status.HTTP_400_BAD_REQUEST)
         try:
             brand = Brand.objects.get(
                 id=data['brand'])
         except ObjectDoesNotExist:
-            return Response({"brand": "No existe ese tipo de objeto de esta marca"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"brand": ["No existe ese tipo de objeto de esta marca"]}, status=status.HTTP_400_BAD_REQUEST)
         try:
             code = Code.objects.get(code=data['code'])
         except ObjectDoesNotExist:
-            return Response({"code": "Codigo invalido"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"code": ["Codigo invalido"]}, status=status.HTTP_400_BAD_REQUEST)
         if code.used:
-            return Response({"code": "ese codigo ya esta siendo usado"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"code": ["ese codigo ya esta siendo usado"]}, status=status.HTTP_400_BAD_REQUEST)
 
 
         data['lost'] = False
@@ -169,6 +169,7 @@ class RegisterItemViewSet(generics.CreateAPIView):
             visitor.company.add(company)
             item.company.add(company)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+        print(serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -236,7 +237,7 @@ class ItemViewSet(viewsets.ModelViewSet):
                 Q(brand__brand__iexact=query)
             ).distinct()
             if (not len(items)):
-                return Response({"Error": {"item": "Item no encontrado"}}, status=status.HTTP_404_NOT_FOUND)
+                return Response({"item": "Item no encontrado"}, status=status.HTTP_404_NOT_FOUND)
         query = self.request.GET.get("search_code") # this filters by codes
         if query:
             items = items.filter(
@@ -264,13 +265,13 @@ class ItemViewSet(viewsets.ModelViewSet):
         # esta es una solucion temporal al cambio de estado de obejto perdido
         #############################################################
         if len(request.data)==1 and 'lost' in request.data:
-            item = get_object_or_404(
-                    Item,
-                    id = pk
-                    )
+            try:
+                item = Item.objects.get(id=pk, company__pk=company_pk, owner__company__pk=company_pk,)
+            except ObjectDoesNotExist:
+                return Response({"item": ["Este item no existe o no ha pasado por esta compañia"]}, status=status.HTTP_400_BAD_REQUEST)
             item.lost = request.data['lost']
             item.save()
-            return Response({"Operacion correcta": "cambiado estado de item"},
+            return Response({"lost": "cambiado estado de item"},
                             status=status.HTTP_201_CREATED)
         ################################################################
 
@@ -284,17 +285,17 @@ class ItemViewSet(viewsets.ModelViewSet):
                 typeitem = TypeItem.objects.get(
                     id=request.data['type_item'])
             except ObjectDoesNotExist:
-                return Response({"Error": {"TypeItem": "No existe ese tipo de objeto"}}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"type_item": ["No existe ese tipo de objeto"]}, status=status.HTTP_400_BAD_REQUEST)
         elif 'brand' in request.data:
             try:
                 brand = Brand.objects.get(
                     id=request.data['brand'])
             except ObjectDoesNotExist:
-                return Response({"Error": {"brand": "No existe ese tipo de objeto de esta marca"}}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"brand": ["No existe ese tipo de objeto para esa marca"]}, status=status.HTTP_400_BAD_REQUEST)
         try:
             item = Item.objects.get(id=pk, company__pk=company_pk, owner__company__pk=company_pk,)
         except ObjectDoesNotExist:
-            return Response({"Error": {"item": "Este item no existe o no ha pasado por esta compañia"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"item": ["Este item no existe o no ha pasado por esta compañia"]}, status=status.HTTP_400_BAD_REQUEST)
 
         serializer = ItemUpdateSerializer(item, data=request.data)
         if serializer.is_valid():
@@ -303,15 +304,15 @@ class ItemViewSet(viewsets.ModelViewSet):
             try:
                 code = Code.objects.get(code=request.data['code'])
             except ObjectDoesNotExist:
-                return Response({"code": {"code": "Codigo invalido"}}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"code": ["Codigo invalido"]}, status=status.HTTP_400_BAD_REQUEST)
             if code.used:
                 if item.code != code:
-                    return Response({"code": {"code": "ese codigo ya esta en uso"}}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({"code": ["ese codigo ya esta en uso"]}, status=status.HTTP_400_BAD_REQUEST)
             serializer.save()
             code.used = True
             code.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response({"Error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def partial_update(self, request, pk, company_pk, **kwargs):
 
@@ -325,17 +326,17 @@ class ItemViewSet(viewsets.ModelViewSet):
                 typeitem = TypeItem.objects.get(
                     id=request.data['type_item'])
             except ObjectDoesNotExist:
-                return Response({"Error": {"TypeItem": "No existe ese tipo de objeto"}}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"type_item": ["No existe ese tipo de objeto"]}, status=status.HTTP_400_BAD_REQUEST)
         elif 'brand' in request.data:
             try:
                 brand = Brand.objects.get(
                     id=request.data['brand'])
             except ObjectDoesNotExist:
-                return Response({"Error": {"brand": "No existe ese tipo de objeto de esta marca"}}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"brand": ["No existe ese tipo de objeto para esa marca"]}, status=status.HTTP_400_BAD_REQUEST)
         try:
             item = Item.objects.get(id=pk, company__pk=company_pk, owner__company__pk=company_pk,)
         except ObjectDoesNotExist:
-            return Response({"Error": {"item": "Este item no existe o no ha pasado por esta compañia"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"item": ["Este item no existe o no ha pasado por esta compañia"]}, status=status.HTTP_400_BAD_REQUEST)
 
 
         serializer = ItemUpdateSerializer(item, data=request.data, partial=True)
@@ -347,10 +348,10 @@ class ItemViewSet(viewsets.ModelViewSet):
                 try:
                     code = Code.objects.get(code=request.data['code'])
                 except ObjectDoesNotExist:
-                    return Response({"code": {"code": "Codigo invalido"}}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({"code": ["Codigo invalido"]}, status=status.HTTP_400_BAD_REQUEST)
                 if code.used:
                     if item.code != code:
-                        return Response({"code": {"code": "ese codigo ya esta en uso"}}, status=status.HTTP_400_BAD_REQUEST)
+                        return Response({"code": ["ese codigo ya esta en uso"]}, status=status.HTTP_400_BAD_REQUEST)
             serializer.save()
             if 'code' in request.data:
                 code.used = True
@@ -365,9 +366,9 @@ class ItemViewSet(viewsets.ModelViewSet):
         try:
             item = Item.objects.get(id=pk, company__pk=company_pk, owner__company__pk=company_pk,)
         except ObjectDoesNotExist:
-            return Response({"Error": {"item": "Este item no existe o no ha pasado por esta compañia"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"item": ["Este item no existe o no ha pasado por esta compañia"]}, status=status.HTTP_400_BAD_REQUEST)
         item.delete()
-        return Response({"Hecho!": "Item eliminado correctamente"}, status=status.HTTP_204_NO_CONTENT)
+        return Response({"item": "Item eliminado correctamente"}, status=status.HTTP_204_NO_CONTENT)
 
 
 class CompanyTypeItem(viewsets.ModelViewSet):

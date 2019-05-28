@@ -72,8 +72,6 @@ class GenerateCodes(APIView):
         return Response("El método GET no está soportado", status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def post(self, request, company_pk, seat_pk):
-
-        start_time = time.time()
         serializer = GenerateCodesSerializer(data=request.data)
         if serializer.is_valid():
             seat = get_object_or_404(
@@ -111,5 +109,4 @@ class GenerateCodes(APIView):
             pdf = buffer.getvalue()
             buffer.close()
             response.write(pdf)
-            print("--- %s seconds ---" % (time.time() - start_time))
             return response
