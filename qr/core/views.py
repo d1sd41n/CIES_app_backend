@@ -345,17 +345,17 @@ class SeatUserViewSet(viewsets.ModelViewSet):
         try:
             data['type']
         except KeyError:
-            return Response({"Error": {'type': "el JSON no tiene el campo type"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'type': "el JSON no tiene el campo type"}, status=status.HTTP_400_BAD_REQUEST)
         try:
             group = Group.objects.get(name=data["type"])
         except ObjectDoesNotExist:
-            return Response({"Error": {'type': "no existe ese tipo de usuario"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'type': "no existe ese tipo de usuario"}, status=status.HTTP_400_BAD_REQUEST)
         try:
             Seat.objects.get(id=seat_pk, company__id=company_pk)
         except ObjectDoesNotExist:
-            return Response({"Error": {"seat": "sede incorrecta"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"seat": "La sede a la cual esta tratando de acceder no existe"}, status=status.HTTP_400_BAD_REQUEST)
         if data["type"] == "Developer" or data["type"] == "Manager":
-            return Response({"Error": {"type": "ese tipo de usuario no permitido"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"type": "ese tipo de usuario no permitido"}, status=status.HTTP_400_BAD_REQUEST)
         if not data["dni"].isnumeric():
             return Response({"Error": {"dni": "La Cedula solo puede ser numerica"}}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -615,7 +615,7 @@ class CompanyVisitor(viewsets.ModelViewSet):
         try:
             company = Company.objects.get(id=company_pk)
         except ObjectDoesNotExist:
-            return Response({"Error": {"company": "la compañia no existe"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"company": "la compañia a la que intenta acceder no existe"}, status=status.HTTP_400_BAD_REQUEST)
         seat_registration = CustomUser.objects.get(user=request.user.pk).seat.pk
         data['seat_registration'] = seat_registration
         data['registered_by'] = request.user.pk
@@ -624,7 +624,7 @@ class CompanyVisitor(viewsets.ModelViewSet):
             visitor_obj = serializer.save()
             visitor_obj.company.add(company)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response({"Error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def update(self, request, pk, company_pk, **kwargs):
         data = request.data.copy()
@@ -632,14 +632,15 @@ class CompanyVisitor(viewsets.ModelViewSet):
         data.pop("registration_date", None)
         data.pop("seat_registration", None)
         data.pop("registered_by", None)
+
         try:
             company = Company.objects.get(id=company_pk)
         except ObjectDoesNotExist:
-            return Response({"Error": {"company": "la compañia no existe"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"company": "la compañia a la que intenta acceder no existe"}, status=status.HTTP_400_BAD_REQUEST)
         try:
             visitor = Visitor.objects.get(id=pk, company__pk=company_pk)
         except ObjectDoesNotExist:
-            return Response({"Error": "el visitante no existe o no ha visitado su compañia"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"visitor": "el visitante no existe o no ha visitado su compañia"}, status=status.HTTP_400_BAD_REQUEST)
         serializer = VisitorSerializer(visitor, data=data)
         if serializer.is_valid():
             serializer.save()
@@ -655,11 +656,11 @@ class CompanyVisitor(viewsets.ModelViewSet):
         try:
             company = Company.objects.get(id=company_pk)
         except ObjectDoesNotExist:
-            return Response({"Error": {"company": "la compañia no existe"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"company": "la compañia a la que intenta acceder no existe"}, status=status.HTTP_400_BAD_REQUEST)
         try:
             visitor = Visitor.objects.get(id=pk, company__pk=company_pk)
         except ObjectDoesNotExist:
-            return Response({"Error": "el visitante no existe o no ha visitado su compañia"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"visitor": "el visitante no existe o no ha visitado su compañia"}, status=status.HTTP_400_BAD_REQUEST)
         serializer = VisitorSerializer(visitor, data=data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -670,9 +671,9 @@ class CompanyVisitor(viewsets.ModelViewSet):
         try:
             visitor = Visitor.objects.get(id=pk, company__pk=company_pk)
         except ObjectDoesNotExist:
-            return Response({"Error": "el visitante no existe o no ha visitado su compañia"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"visitor": "el visitante no existe o no ha visitado su compañia"}, status=status.HTTP_400_BAD_REQUEST)
         visitor.delete()
-        return Response({"Hecho!": "Visistante eliminado correctamente"}, status=status.HTTP_204_NO_CONTENT)
+        return Response({"visistor": "Visistante eliminado correctamente"}, status=status.HTTP_204_NO_CONTENT)
 
 
 class ObtainExpiringAuthToken(ObtainAuthToken):
@@ -724,11 +725,7 @@ class VisitorExist(APIView):
     se debe enviar un json con el dni del visistante a consultar:
 
     {
-    "first_name": "otro visistnte compañia 1",
-    "last_name": "ssffds",
-    "dni": "s44gdds",
-    "email": "esil@company.com",
-    "enabled": true
+    "dni": "s44gdds"
     }
     """
     permission_classes = (GuardAndSuperiorsOnly,)

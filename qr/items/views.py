@@ -48,11 +48,11 @@ class CheckInViewSet(viewsets.ModelViewSet):
         try:
             company = Company.objects.get(id=company_pk)
         except ObjectDoesNotExist:
-            return Response({"Error": {"company": "La compañía no existe"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"company": "la compañia a la que intenta acceder no existe"}, status=status.HTTP_400_BAD_REQUEST)
         try:
             seat = Seat.objects.get(id=seat_pk, company__id=company_pk)
         except ObjectDoesNotExist:
-            return Response({"Error": {"seat": "La sede no existe"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"seat": "La sede a la que intenta acceder no existe"}, status=status.HTTP_400_BAD_REQUEST)
         serializer = CheckInCreateSerializer(data=data)
         if serializer.is_valid():
             serializer.validated_data['seat'] = seat
@@ -61,7 +61,7 @@ class CheckInViewSet(viewsets.ModelViewSet):
             check.item.company.add(company)
             check.item.owner.company.add(company)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response({"Error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def queryAnnotate(self, checks):
         checks = checks \
@@ -133,26 +133,27 @@ class RegisterItemViewSet(generics.CreateAPIView):
 
     def post(self, request, company_pk, seat_pk):
         data = request.data.copy()
+
         try:
             seat = Seat.objects.get(id=seat_pk, company__id=company_pk)
         except ObjectDoesNotExist:
-            return Response({"Error": {"seat": "esa sede no existe"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"seat": "la compañia a la que intenta acceder no existe"}, status=status.HTTP_400_BAD_REQUEST)
         try:
             typeitem = TypeItem.objects.get(
                 id=data['type_item'])
         except ObjectDoesNotExist:
-            return Response({"Error": {"TypeItem": "No existe ese tipo de objeto"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"type_item": "No existe ese tipo de objeto"}, status=status.HTTP_400_BAD_REQUEST)
         try:
             brand = Brand.objects.get(
                 id=data['brand'])
         except ObjectDoesNotExist:
-            return Response({"Error": {"brand": "No existe ese tipo de objeto de esta marca"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"brand": "No existe ese tipo de objeto de esta marca"}, status=status.HTTP_400_BAD_REQUEST)
         try:
             code = Code.objects.get(code=data['code'])
         except ObjectDoesNotExist:
-            return Response({"Error": {"code": "Codigo invalido"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"code": "Codigo invalido"}, status=status.HTTP_400_BAD_REQUEST)
         if code.used:
-            return Response({"Error": {"code": "ese codigo ya esta en uso"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"code": "ese codigo ya esta siendo usado"}, status=status.HTTP_400_BAD_REQUEST)
 
 
         data['lost'] = False
@@ -168,7 +169,7 @@ class RegisterItemViewSet(generics.CreateAPIView):
             visitor.company.add(company)
             item.company.add(company)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response({"Error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ItemViewSet(viewsets.ModelViewSet):

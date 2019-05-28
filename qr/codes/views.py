@@ -1,7 +1,5 @@
-
 from io import BytesIO
 
-import qrcode
 from django.core.files import File
 from django.db.models import Q
 from django.http import HttpResponse
@@ -19,6 +17,11 @@ from core.models import CustomUser, Seat
 from items.models import Item
 from qr.permissions import SupervisorAndSuperiorsOnly
 
+import time
+import qrcode
+from reportlab.graphics.barcode.qr import QrCodeWidget
+import pyqrcode
+import sys
 
 class CompanyCodes(viewsets.ReadOnlyModelViewSet):
     """"
@@ -62,48 +65,15 @@ class GenerateCodes(APIView):
     }"""
     serializer_class = GenerateCodesSerializer
     permission_classes = [SupervisorAndSuperiorsOnly]
-    # lo siguiente pone un limite a la generacion de codigos al dia
+    # lo siguiente pone un limite a la generacion de codigos al dia por usuario
     throttle_scope = 'generatecodes'
-
-    def permissions(self, request, response, buffer, p, code_list):
-        """
-        Ya que es sólo una vista la que necesita estos
-        permisos se harán de esta manera y no usando los de DRF."""
-
-        developer_permission = request.user.groups.filter(
-            Q(name="Developer"))
-        if developer_permission:
-            Code.objects.bulk_create(code_list)
-            p.save()
-            pdf = buffer.getvalue()
-            buffer.close()
-            response.write(pdf)
-            return response
-        group = request.user.groups.filter(Q(name="Manager") |
-                                           Q(name="Security Boss"))
-        parameters = [parameter for parameter in request.path_info
-                      if parameter.isdigit()]
-        user_company = str(CustomUser.objects.get(
-            user=request.user).seat.company.id)
-        user_seat = str(CustomUser.objects.get(user=request.user).seat.id)
-        if (group and user_company == parameters[0]
-                and user_seat == parameters[1]):
-            Code.objects.bulk_create(code_list)
-            p.save()
-            pdf = buffer.getvalue()
-            buffer.close()
-            response.write(pdf)
-            return response
-        return Response(status=status.HTTP_403_FORBIDDEN)
 
     def get(self, request, company_pk, seat_pk):
         return Response("El método GET no está soportado", status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def post(self, request, company_pk, seat_pk):
-        """
-        Debido a que esta view no es del tipo ModelViewSet debe tener
-        permisos específicos."""
 
+        start_time = time.time()
         serializer = GenerateCodesSerializer(data=request.data)
         if serializer.is_valid():
             seat = get_object_or_404(
@@ -111,7 +81,6 @@ class GenerateCodes(APIView):
                 Q(id=seat_pk) &
                 Q(company=company_pk)
             )
-            serializer.save()
             pages = serializer.data['pages']
             if pages > 4:
                 return Response("El máximo de páginas a crear a la vez es de 4 páginas", status=status.HTTP_400_BAD_REQUEST)
@@ -137,10 +106,10 @@ class GenerateCodes(APIView):
                                           width=50,
                                           height=50)
                 p.showPage()
-            #return self.permissions(request, response, buffer, p, code_list)
             Code.objects.bulk_create(code_list)
             p.save()
             pdf = buffer.getvalue()
             buffer.close()
             response.write(pdf)
+            print("--- %s seconds ---" % (time.time() - start_time))
             return response

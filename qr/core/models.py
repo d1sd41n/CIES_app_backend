@@ -73,6 +73,10 @@ class Visitor(models.Model):
     Persona que visita la sede de la compañia y trae consigo un
     objeto que se registra
     """
+
+    class Meta:
+        verbose_name = "Visitante"
+
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
     dni = models.CharField(max_length=50, unique=True)
