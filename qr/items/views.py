@@ -48,11 +48,11 @@ class CheckInViewSet(viewsets.ModelViewSet):
         try:
             company = Company.objects.get(id=company_pk)
         except ObjectDoesNotExist:
-            return Response({"company": "la compañia a la que intenta acceder no existe"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"company": ["la compañia a la que intenta acceder no existe"]}, status=status.HTTP_400_BAD_REQUEST)
         try:
             seat = Seat.objects.get(id=seat_pk, company__id=company_pk)
         except ObjectDoesNotExist:
-            return Response({"seat": "La sede a la que intenta acceder no existe"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"seat": ["La sede a la que intenta acceder no existe"]}, status=status.HTTP_400_BAD_REQUEST)
         serializer = CheckInCreateSerializer(data=data)
         if serializer.is_valid():
             serializer.validated_data['seat'] = seat
@@ -245,9 +245,9 @@ class ItemViewSet(viewsets.ModelViewSet):
             ).distinct()
             try:
                 if (not len(items)):
-                    return Response({"Error": {"item": "Item no encontrado"}}, status=status.HTTP_404_NOT_FOUND)
+                    return Response({"item": "Item no encontrado"}, status=status.HTTP_404_NOT_FOUND)
             except ValidationError:
-                return Response({"Error": {"search_code": "Codigo invalido"}}, status=status.HTTP_404_NOT_FOUND)
+                return Response({"search_code": "Codigo invalido"}, status=status.HTTP_404_NOT_FOUND)
         items = self.queryAnnotate(items)
         serializer = ItemSerializer(items, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -255,7 +255,7 @@ class ItemViewSet(viewsets.ModelViewSet):
     def retrieve(self, request, company_pk, pk):
         items = Item.objects.filter(pk=pk, company__pk=company_pk, owner__company__pk=company_pk,)
         if not len(items):
-            return Response({"Error": {"item": "Este item no existe o no ha pasado por esta compañia"}}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"item": "Este item no existe o no ha pasado por esta compañia"}, status=status.HTTP_404_NOT_FOUND)
         item = self.queryAnnotate(items)
         serializer = ItemSerializer(item, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -422,7 +422,7 @@ class CompanyTypeItem(viewsets.ModelViewSet):
         try:
             company = Company.objects.get(id=company_pk)
         except ObjectDoesNotExist:
-            return Response({"Error": {"company": "La compañía no está registrada"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"company": ["La compañía no está registrada"]}, status=status.HTTP_400_BAD_REQUEST)
         if serializer.is_valid():
             serializer.validated_data['company'] = company
             serializer.save()
@@ -436,18 +436,18 @@ class CompanyTypeItem(viewsets.ModelViewSet):
         try:
             company = Company.objects.get(id=company_pk)
         except ObjectDoesNotExist:
-            return Response({"Error": {"company": "la compañia no existe"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"company": ["la compañia no existe"]}, status=status.HTTP_400_BAD_REQUEST)
         try:
             typeitem = TypeItem.objects.get(id=pk, company__pk=company_pk)
         except ObjectDoesNotExist:
-            return Response({"Error": {"TypeItem": "No existe ese tipo de objeto"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"TypeItem": "No existe ese tipo de objeto"}, status=status.HTTP_400_BAD_REQUEST)
         serializer = TypeItemSerializer(typeitem, data=data)
         if serializer.is_valid():
             serializer.validated_data['company'] = company
             serializer.save()
             return Response(request.data, status=status.HTTP_201_CREATED)
         else:
-            return Response({"Error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         def destroy(self, request, pk, company_pk):
             return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -507,12 +507,12 @@ class BrandItem(viewsets.ModelViewSet):
         try:
             Company.objects.get(id=company_pk)
         except ObjectDoesNotExist:
-            return Response({"Error": {"company": "Esa compañia no existe"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"company": ["Esa compañia no existe"]}, status=status.HTTP_400_BAD_REQUEST)
         try:
             typeitem = TypeItem.objects.get(
                 id=typeitem_pk, company__pk=company_pk)
         except ObjectDoesNotExist:
-            return Response({"Error": {"TypeItem": "No existe ese tipo de objeto"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"TypeItem": ["No existe ese tipo de objeto"]}, status=status.HTTP_400_BAD_REQUEST)
 
         data = request.data.copy()
 
@@ -530,12 +530,12 @@ class BrandItem(viewsets.ModelViewSet):
         try:
             company = Company.objects.get(id=company_pk)
         except ObjectDoesNotExist:
-            return Response({"Error": {"company": "Esa compañia no existe"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"company": "Esa compañia no existe"}, status=status.HTTP_400_BAD_REQUEST)
         try:
             typeitem = Brand.objects.get(
                 type_item=typeitem_pk, type_item__company=company_pk)
         except ObjectDoesNotExist:
-            return Response({"Error": {"item": "No existe el tipo de objeto"}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"item": "No existe el tipo de objeto"}, status=status.HTTP_400_BAD_REQUEST)
         serializer = BrandSerializer(brand, data=data)
         if serializer.is_valid():
             serializer.validated_data['company'] = company
@@ -543,7 +543,7 @@ class BrandItem(viewsets.ModelViewSet):
             serializer.save()
             return Response(request.data, status=status.HTTP_201_CREATED)
         else:
-            return Response({"Error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         def destroy(self, request, pk, company_pk, typeitem_pk,):
             return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
