@@ -17,11 +17,7 @@ from core.models import CustomUser, Seat
 from items.models import Item
 from qr.permissions import SupervisorAndSuperiorsOnly
 
-import time
 import qrcode
-from reportlab.graphics.barcode.qr import QrCodeWidget
-import pyqrcode
-import sys
 
 class CompanyCodes(viewsets.ReadOnlyModelViewSet):
     """"
