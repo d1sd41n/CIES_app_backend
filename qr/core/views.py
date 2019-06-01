@@ -370,7 +370,7 @@ class SeatUserViewSet(viewsets.ModelViewSet):
                 return Response({"password": e}, status=status.HTTP_400_BAD_REQUEST)
             user.password = make_password(data['password'])
             user.save()
-            data['user'] = user.id
+            data['user'] = user.id #add this beacuse customuser model needs the user's id
             if serializer_custom.is_valid():
                 customUser = serializer_custom.save()
                 group.user_set.add(user)

@@ -3,11 +3,15 @@ from core.models import CustomUser
 
 class DeveloperOnly(BasePermission):
     def has_permission(self, request, view):
+        if request.user.is_anonymous:
+            return False
         return  "Developer" in request.user.groups.values_list('name',flat=True)
 
 
 class ManagerAndSuperiorsOnly(BasePermission):
     def has_permission(self, request, view):
+        if request.user.is_anonymous: # this is for anon users
+            return False
         if  "Developer" in request.user.groups.values_list('name',flat=True):
             return True
         user_company = str(CustomUser.objects.get(user=request.user).seat.company.id)
@@ -17,6 +21,8 @@ class ManagerAndSuperiorsOnly(BasePermission):
 
 class SupervisorAndSuperiorsOnly(BasePermission):
     def has_permission(self, request, view):
+        if request.user.is_anonymous: # this is for anon users
+            return False
         if  "Developer" in request.user.groups.values_list('name',flat=True):
             return True
         user_company = str(CustomUser.objects.get(user=request.user).seat.company.id)
@@ -34,6 +40,8 @@ class SupervisorAndSuperiorsOnly(BasePermission):
 
 class GuardAndSuperiorsOnly(BasePermission):
     def has_permission(self, request, view):
+        if request.user.is_anonymous: # this is for anon users
+            return False
         if  "Developer" in request.user.groups.values_list('name',flat=True):
             return True
         user_company = str(CustomUser.objects.get(user=request.user).seat.company.id)
