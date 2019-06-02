@@ -63,6 +63,7 @@ class CustomUser(models.Model):
 
     class Meta:
         verbose_name = "usuario"
+        verbose_name_plural = "usuarios"
 
     def __str__(self):
         return '{0} - {1}: {2} {3}'.format(self.user.username,
@@ -78,7 +79,8 @@ class Visitor(models.Model):
     """
 
     class Meta:
-        verbose_name = "Visitante"
+        verbose_name = "visitante"
+        verbose_name_plural = "visitantes"
 
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)

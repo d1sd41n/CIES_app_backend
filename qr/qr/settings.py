@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'core',
     'disabled',
     'emailing',
+    'analytics',
     # third party
     'rest_framework',
     'corsheaders',
