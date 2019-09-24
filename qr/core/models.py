@@ -38,7 +38,7 @@ class Company(models.Model):
 class Seat(models.Model):
     """Almacena diferentes sedes de una compañia
     """
-    address = models.OneToOneField(Location, on_delete=models.CASCADE,
+    address = models.OneToOneField(Location, on_delete=models.SET_NULL,
                                    blank=True, null=True)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     email = models.EmailField(blank=True)
@@ -89,9 +89,9 @@ class Visitor(models.Model):
     enabled = models.BooleanField(default=True)
     email = models.EmailField(null=True, unique=True)
     phone = models.CharField(max_length=10, null=True, blank=True)
-    seat_registration = models.ForeignKey(Seat, blank=True, null=True)
+    seat_registration = models.ForeignKey(Seat, blank=True, null=True, on_delete=models.SET_NULL)
     registration_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
-    registered_by = models.ForeignKey(User, blank=True, null=True)
+    registered_by = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL)
     objects = VisitorManager()
 
     def __str__(self):

@@ -12,7 +12,7 @@ from .managers import (BrandManager, CheckinManager, ItemManager,
 
 class TypeItem(models.Model):
     kind = models.CharField(max_length=30, unique=True)
-    company = models.ForeignKey(Company, blank=True, null=True)
+    company = models.ForeignKey(Company, on_delete=models.SET_NULL, blank=True, null=True)
     enabled = models.BooleanField(default=True)
     objects = TypeItemManager()
 
@@ -36,7 +36,7 @@ class Item(models.Model):
     TypeItem, on_delete=models.CASCADE)
     code = models.OneToOneField(Code, unique=True, on_delete=models.CASCADE)
     owner = models.ForeignKey(Visitor, on_delete=models.CASCADE)
-    brand = models.ForeignKey(Brand, on_delete=models.CASCADE,
+    brand = models.ForeignKey(Brand, on_delete=models.SET_NULL,
                               null=True, blank=True)
     reference = models.CharField(max_length=30, blank=True)
     color = models.CharField(max_length=30, blank=True)
@@ -45,9 +45,9 @@ class Item(models.Model):
     lost_date = models.DateTimeField(null=True, blank=True)
     enabled = models.BooleanField(default=True)
     company = models.ManyToManyField(Company, blank=True)
-    seat_registration = models.ForeignKey(Seat, blank=True, null=True, on_delete=models.CASCADE)
+    seat_registration = models.ForeignKey(Seat, blank=True, null=True, on_delete=models.SET_NULL)
     registration_date = models.DateTimeField(auto_now_add=True, blank=True)
-    registered_by = models.ForeignKey(User, on_delete=models.CASCADE,
+    registered_by = models.ForeignKey(User, on_delete=models.SET_NULL,
                                       blank=True, null=True)
     objects = ItemManager()
 
@@ -74,7 +74,7 @@ class LostItem(models.Model):
 class CheckIn(models.Model):
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
     seat = models.ForeignKey(Seat, on_delete=models.CASCADE)
-    worker = models.ForeignKey(User, on_delete=models.CASCADE, null=True,
+    worker = models.ForeignKey(User, on_delete=models.SET_NULL, null=True,
                                blank=True)
     date = models.DateTimeField(default=timezone.now, blank=True)
     go_in = models.BooleanField()
