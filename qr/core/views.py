@@ -721,7 +721,9 @@ class ObtainExpiringAuthToken(ObtainAuthToken):
             'name': user.first_name,
             'last_name': user.last_name,
             'company': custom.seat.company_id,
+            'company_name': custom.seat.company.name,
             'seat': custom.seat_id,
+            'seat_name': custom.seat.name,
         })
 
 
