@@ -60,7 +60,7 @@ class GenerateCodes(APIView):
     "pages": 1
     }"""
     serializer_class = GenerateCodesSerializer
-    permission_classes = [SupervisorAndSuperiorsOnly]
+    permission_classes = [GuardAndSuperiorsOnly]
     # lo siguiente pone un limite a la generacion de codigos al dia por usuario
     throttle_scope = 'generatecodes'
 

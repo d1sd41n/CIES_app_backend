@@ -714,6 +714,7 @@ class ObtainExpiringAuthToken(ObtainAuthToken):
                 token.save()
         custom = CustomUser.objects.get(user=user.pk)
         update_last_login(None, user)
+        type_user = custom.user.groups.all()[0].name
         return Response({
             'token': token.key,
             'user_id': user.pk,
@@ -724,6 +725,7 @@ class ObtainExpiringAuthToken(ObtainAuthToken):
             'company_name': custom.seat.company.name,
             'seat': custom.seat_id,
             'seat_name': custom.seat.name,
+            'type': type_user,
         })
 
 
