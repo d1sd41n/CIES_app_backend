@@ -15,7 +15,7 @@ from codes.models import Code
 from codes.serializers import CodesSerializer, GenerateCodesSerializer
 from core.models import CustomUser, Seat
 from items.models import Item
-from qr.permissions import SupervisorAndSuperiorsOnly
+from qr.permissions import GuardAndSuperiorsOnly
 
 import qrcode
 
