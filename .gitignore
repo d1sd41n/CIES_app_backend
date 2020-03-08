@@ -28,6 +28,7 @@ __pycache__/
 *.so
 
 # Distribution / packaging
+qr/static/
 django-env/
 .Python
 env/
