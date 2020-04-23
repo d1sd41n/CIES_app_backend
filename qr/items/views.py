@@ -27,7 +27,7 @@ class CheckInViewSet(viewsets.ModelViewSet):
         <pre>
         {
         "go_in": true/false,  # true si ingresa, false si sale
-        "item": pk_item,  # Id del objeto que ingresa
+        "code": "00cab8ae-b779-4861-bede-c59a6403c959",  # qr hash of the item
         "seat": pk_seat,  # Id de la sede donde se realiza el último ingreso
         "worker": pk_worker  # Id del empleado que realiza el ingreso/salida
         }
