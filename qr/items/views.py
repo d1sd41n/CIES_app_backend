@@ -53,6 +53,11 @@ class CheckInViewSet(viewsets.ModelViewSet):
             seat = Seat.objects.get(id=seat_pk, company__id=company_pk)
         except ObjectDoesNotExist:
             return Response({"seat": ["La sede a la que intenta acceder no existe"]}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            item = Item.objects.get(code=data["code"])
+            data["item"] = item.id
+        except ObjectDoesNotExist:
+            return Response({"code": ["Ningun objeto con ese codigo se encuentra registrado"]}, status=status.HTTP_400_BAD_REQUEST)
         serializer = CheckInCreateSerializer(data=data)
         if serializer.is_valid():
             serializer.validated_data['seat'] = seat
@@ -60,7 +65,16 @@ class CheckInViewSet(viewsets.ModelViewSet):
             check = serializer.save()
             check.item.company.add(company)
             check.item.owner.company.add(company)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            data = serializer.data.copy()
+            data["lost"] = item.lost
+            data["color"] = item.color
+            data["brand"] = item.brand.brand
+            data["owner_dni"] = item.owner.dni
+            data["owner_first_name"] = item.owner.first_name
+            data["owner_last_name"] = item.owner.last_name
+            del data["id"]
+            del data["date"]
+            return Response(data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def queryAnnotate(self, checks):
