@@ -69,6 +69,7 @@ class CheckInViewSet(viewsets.ModelViewSet):
             data["lost"] = item.lost
             data["color"] = item.color
             data["brand"] = item.brand.brand
+            data["type"] = item.brand.type_item.kind
             data["owner_dni"] = item.owner.dni
             data["owner_first_name"] = item.owner.first_name
             data["owner_last_name"] = item.owner.last_name
@@ -183,7 +184,6 @@ class RegisterItemViewSet(generics.CreateAPIView):
             visitor.company.add(company)
             item.company.add(company)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        print(serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
