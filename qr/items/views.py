@@ -370,7 +370,15 @@ class ItemViewSet(viewsets.ModelViewSet):
             if 'code' in request.data:
                 code.used = True
                 code.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+            data =  serializer.data.copy()
+            data["owner_name"] = item.owner.first_name
+            data["owner_last_name"] = item.owner.last_name
+            data["owner_dni"] = item.owner.dni
+            data["brand"] = item.brand.brand
+            data["type_item"] = item.type_item.kind
+            data["reference"] = item.reference
+            return Response(data, status=status.HTTP_201_CREATED)
         return Response({"Error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
     def create(self, request, **kwargs):
