@@ -378,6 +378,7 @@ class ItemViewSet(viewsets.ModelViewSet):
             data["brand"] = item.brand.brand
             data["type_item"] = item.type_item.kind
             data["reference"] = item.reference
+            data["id"] = item.id
             return Response(data, status=status.HTTP_201_CREATED)
         return Response({"Error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
