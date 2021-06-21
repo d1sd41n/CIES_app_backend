@@ -54,6 +54,8 @@ CIES is an app to automatically register items that enter and leave a company fa
 The project is divided into three subprojects: backend, web frontend, mobile frontend; each one in its respective repository. 
 This repository is the backend code source
 
+Web frontend: [https://github.com/d1sd41n/CIES_app_web_frontend](https://github.com/d1sd41n/CIES_app_web_frontend)  
+Mobile frontend: [https://github.com/d1sd41n/CIES_app_frontend_mobile](https://github.com/d1sd41n/CIES_app_frontend_mobile)
 
 Features implemented in the backend:
 * User management system
@@ -122,7 +124,7 @@ In order to make the program work, we must have Docker and Docker Compose instal
     ```txt
     Developer, Manager, Superviser, Guard
     ```
-With these configurations the project is ready to work, now the following thing is to proceed to create a company, create and assign to it a user of type Manager; this can be done from the django admin.
+With these configurations the project is ready to work, now the following thing is to proceed to create a company, create and assign to it a user through the "usuario" model (a model that we create to extend the user model that brings Django by default), and then add the "Manager" group to the user; this can be done from the django admin.
 Once this is done, you can use that user to log in from either of the two frontend applications from where from now on you can manage the entire system without touching the backend anymore.
 
 
